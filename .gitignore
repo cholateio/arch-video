@@ -1,0 +1,8 @@
+# 參考影片是他人作品，只留在本機
+*.mp4
+*:Zone.Identifier
+
+node_modules/
+out/
+.cache/
+.env
