@@ -40,6 +40,8 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 - **`hyperframes browser path` 會順便下載 Chrome**，不是唯讀指令。體檢因此只看環境變數與快取資料夾，不呼叫它。
 - **進入點用動態載入**：`scripts/arch-video.mjs` 依指令才載入模組，沒裝相依套件時 `doctor` 才跑得起來。
   `lib/doctor.mjs` 不可以在檔案開頭載入 `node_modules` 裡的東西。
+- **數字從 0 數上去要用 `fromTo`**：`from({ innerText: 0 })` 會讓數字停在 0（見 `scenes/stat.mjs`）。
+- **換章節的 `wipe` 會自動輪流三種樣式**（橫條、圓形、直條），依出現的次序決定，不是寫在分鏡裡。
 - **`<audio>` 一定要有 `id`**，否則 HyperFrames 渲染出來沒有聲音，而且不會報錯（lint 才會抓到）。
 - **觸發詞用字元位置對時間。** 配音服務的斷詞會把詞切開（「十二個」變成「十」「二個」），
   所以 `timeline.mjs` 把各段文字接起來找起始字元，不直接比對詞。
@@ -60,7 +62,7 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 
 - Windows 原生環境還沒跑過整條流程；體檢找 Chrome 快取的位置（`~/.cache/hyperframes/chrome`）在 Windows 上未確認，找不到時只會列為「注意」。
 - `SKILL.md` 的整條流程還沒有實際跑過一次。
-- Morph 轉場尚未實作；`zoom` 轉場寫好了但示範片沒有用到。
+- Morph 轉場尚未實作。
 
 ## Docs map
 

@@ -2,7 +2,7 @@
 import { round } from './util.mjs'
 
 // Time taken by the incoming transition; scene content starts after it.
-export const LEAD = { cut: 0.3, push: 0.7, wipe: 0.65, zoom: 0.5 }
+export const LEAD = { cut: 0.3, push: 0.7, 'push-up': 0.7, wipe: 0.65, zoom: 0.5 }
 const GAP = 0.35 // gap between lines
 const TAIL = 0.6 // hold after a scene's last line
 const TAIL_BEFORE_WIPE = 0.8 // longer hold when the next scene wipes in, so the wipe does not cover the end of the line

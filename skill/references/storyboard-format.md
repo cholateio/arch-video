@@ -38,7 +38,7 @@
 | `scenes[].id` | 小寫英數與連字號，字母開頭，不可重複 |
 | `scenes[].type` | 場景元件，見下方 |
 | `scenes[].chapter` | 屬於哪一章；不寫就不顯示章節標示 |
-| `scenes[].transition` | 進場轉場：`cut`（預設）、`wipe`、`push`、`zoom` |
+| `scenes[].transition` | 進場轉場：`cut`（預設）、`wipe`、`push`、`push-up`、`zoom` |
 | `scenes[].lines` | 旁白。`text` 是字幕；`say` 是實際唸的話，省略時等於 `text` |
 
 ## 觸發點（`at`）
@@ -138,9 +138,132 @@
 ```
 
 - `svg` 的路徑相對於分鏡檔。
-- `focus[].zone` 是 SVG 裡分區的 id；寫 `null` 代表拉回全圖。
+- `draw: false`：直接顯示畫好的圖，不重畫一次。接在另一個 `map` 場景後面繼續講時使用。
 - `title: true` 才顯示 SVG 自己的圖名，預設不顯示。
 - 圖的顏色會自動換成目前主題的底色與線條色。
+- `focus` 是鏡頭的步驟，每一步寫 `at` 加上下面其中一種：
+
+  | 寫法 | 效果 |
+  |---|---|
+  | `"zone": "zone-backend"` | 拉近到那一區，外框變成強調色，其他部分淡掉 |
+  | `"nodes": ["n-api", "n-query"]` | 鏡頭框住這幾個節點，其他部分淡掉 |
+  | `"trace": ["e-api-query"]` | 追蹤這條連線：線變成強調色、有一段光點沿線跑，兩端的節點保持亮著 |
+  | 三種都不寫 | 拉回全圖 |
+
+  分區、節點、連線的 id 就是 arch-blueprint SVG 裡的 id；寫錯會報錯並列出可用的 id。
+
+逐區講解加資料流追蹤的寫法：
+
+```json
+{
+  "svg": "overview.svg",
+  "draw": false,
+  "focus": [
+    { "zone": "zone-agent", "at": "中間" },
+    { "at": "現在跟著" },
+    { "trace": ["e-writer-check"], "at": "草稿" }
+  ]
+}
+```
+
+### `chat`：對話
+
+對話泡泡，適合開場的情境與「怎麼用」。最多 4 則，每則最多兩行。
+
+```json
+{
+  "messages": [
+    { "who": "them", "name": "新同事", "text": "這個專案是怎麼運作的？" },
+    { "who": "me", "name": "你", "text": "等我找一下。", "at": "你說" }
+  ]
+}
+```
+
+- `who`：`me` 靠右、`them` 靠左。
+
+### `compare`：對比卡片
+
+左右兩張卡片，例如兩種痛點、適合與不適合。每張最多 4 項。
+
+```json
+{
+  "left": { "title": "適合", "mood": "good", "items": [{ "text": "想快速看懂全貌", "at": "全貌" }] },
+  "right": { "title": "不適合", "mood": "bad", "items": ["要畫到細節層級"] }
+}
+```
+
+- `mood`：`good`（打勾）、`bad`（打叉）、`plain`（預設）。
+- 左邊的卡片在場景一開始就出現。
+
+### `list`：清單
+
+有標題的條列，最多 5 項。
+
+```json
+{
+  "title": "重點回顧",
+  "style": "check",
+  "items": [{ "text": "先分區，再連線", "at": "先分區" }, { "text": "一張圖說一件事", "sub": "節點最多十二個" }]
+}
+```
+
+- `style`：`number`（編號，適合預告）、`check`（打勾，適合回顧）、`bullet`（預設）。
+
+### `stat`：大數字
+
+一到三個大數字加說明。整數會從 0 數上去。
+
+```json
+{ "items": [{ "value": "12", "unit": "個", "label": "節點上限", "tone": "accent", "at": "節點" }] }
+```
+
+### `tree`：檔案樹
+
+列出檔案結構，旁白講到哪個檔案，它就亮起來並顯示說明。最多 8 列。
+
+```json
+{
+  "root": "arch-blueprint/",
+  "items": [
+    { "name": "scripts/" },
+    { "name": "check.py", "depth": 2, "note": "檢查腳本", "at": "檢查腳本", "icon": "file-py" }
+  ]
+}
+```
+
+- 名稱以 `/` 結尾的是資料夾；`depth` 是縮排層級（預設 1）；`icon` 可指定 Phosphor 圖示。
+
+### `cycle`：循環
+
+三到五個步驟排成一圈，用箭頭連起來，適合「重複做到某個條件成立」的流程。
+
+```json
+{
+  "center": { "text": "直到零錯誤", "at": "直到" },
+  "steps": [{ "icon": "pencil-ruler", "label": "畫圖", "at": "畫圖" }],
+  "loopAt": "循環",
+  "note": { "text": "最後還要親眼看過一次", "at": "用眼睛" }
+}
+```
+
+- `loopAt`：最後一段回到起點的箭頭什麼時候畫出來。
+
+### `terminal`：終端機
+
+指令逐字打出來，輸出接在後面。最多 8 行。
+
+```json
+{
+  "title": "terminal",
+  "lines": [
+    { "type": "cmd", "text": "python3 scripts/check.py overview.svg", "at": "一行指令" },
+    { "type": "ok", "text": "✓ overview.svg  (0 錯誤, 0 警告)", "at": "零錯誤" }
+  ]
+}
+```
+
+- `type`：`cmd`（指令）、`out`（一般輸出，預設）、`ok`（成功）、`err`（失敗）。
+- 輸出要照實寫，不可以編造程式不會印出的內容。
 
 ## 產出
 

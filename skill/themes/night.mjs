@@ -37,6 +37,9 @@ export default {
     heading: 46, // flow title
     label: 34, // flow step names
     pill: 34, // pill caption under the flow
+    body: 36, // running text: chat bubbles, card items, tree notes
+    small: 24, // secondary text: speaker names, list sub-lines
+    stat: 150, // big numbers
   },
   layout: { align: 'center', inset: 0 },
   frame: { width: 1920, height: 1080, fps: 30 },

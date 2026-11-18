@@ -37,6 +37,7 @@ const rootVars = (theme) => `:root {
   --sub-size: ${theme.sub.size}px; --sub-weight: ${theme.sub.weight}; --sub-bg: ${theme.sub.bg}; --sub-fg: ${theme.sub.fg}; --sub-shadow: ${theme.sub.shadow};
   --align-items: ${theme.layout.align === 'center' ? 'center' : 'flex-start'}; --text-align: ${theme.layout.align}; --inset: ${theme.layout.inset}px;
   --ink-soft: color-mix(in srgb, ${theme.color.ink} 62%, transparent);
+  --ink-faint: color-mix(in srgb, ${theme.color.ink} 22%, transparent);
   --font-mono: ${theme.font.mono}; --font-tc: ${theme.font.tc};
   --w: ${theme.frame.width}px; --h: ${theme.frame.height}px;
   --stage-x: ${theme.stage.x}px; --stage-y: ${theme.stage.y}px; --stage-w: ${theme.stage.width}px; --stage-h: ${theme.stage.height}px;
@@ -49,6 +50,8 @@ const subtitleUnits = (s) => [...s].reduce((n, c) => n + (isWide(c) ? 1 : 0.5), 
 export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   fs.mkdirSync(path.join(buildDir, 'audio'), { recursive: true })
   const W = theme.frame.width
+  const H = theme.frame.height
+  let wipes = 0
   const anims = []
   const inits = []
   const body = []
@@ -77,7 +80,7 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     const first = Math.min(...anims.slice(before).map((a) => a.at(-1)))
     if (first - ts.contentStart > 1.5) warn(`場景 ${s.id}：開場後 ${round(first - ts.contentStart)} 秒畫面才有東西，請讓第一個元素早點出現`)
     const next = tl.scenes[i + 1]
-    const duration = round(ts.end - ts.start + (next?.transition === 'push' ? LEAD.push : 0))
+    const duration = round(ts.end - ts.start + (next?.transition?.startsWith('push') ? LEAD.push : 0))
     body.push(`<section id="${s.id}" class="scene clip" data-start="${ts.start}" data-duration="${duration}">\n${inner}\n</section>`)
 
     const T = ts.start
@@ -85,15 +88,28 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     if (ts.transition === 'push') {
       anims.push(['to', `#${prev.id}`, { x: -W, duration: 0.6, ease: 'power3.inOut' }, T])
       anims.push(['fromTo', `#${s.id}`, { x: W }, { x: 0, duration: 0.6, ease: 'power3.inOut' }, T])
+    } else if (ts.transition === 'push-up') {
+      anims.push(['to', `#${prev.id}`, { y: -H, duration: 0.6, ease: 'power3.inOut' }, T])
+      anims.push(['fromTo', `#${s.id}`, { y: H }, { y: 0, duration: 0.6, ease: 'power3.inOut' }, T])
     } else if (ts.transition === 'wipe') {
-      anims.push(['fromTo', '#wipe i', { xPercent: -101 }, { xPercent: 0, duration: 0.3, stagger: 0.04, ease: 'power3.in', immediateRender: false }, round(T - 0.5)])
-      anims.push(['to', '#wipe i', { xPercent: 101, duration: 0.3, stagger: 0.04, ease: 'power3.out' }, round(T + 0.05)])
+      // Chapter wipes rotate through three looks so consecutive chapters do not change the same way.
+      const look = wipes++ % 3
+      if (look === 0) {
+        anims.push(['fromTo', '#wipe i', { xPercent: -101 }, { xPercent: 0, duration: 0.3, stagger: 0.04, ease: 'power3.in', immediateRender: false }, round(T - 0.5)])
+        anims.push(['to', '#wipe i', { xPercent: 101, duration: 0.3, stagger: 0.04, ease: 'power3.out' }, round(T + 0.05)])
+      } else if (look === 1) {
+        anims.push(['fromTo', '#iris', { scale: 0, x: 0, y: 0 }, { scale: 1, duration: 0.5, ease: 'power3.in', immediateRender: false }, round(T - 0.5)])
+        anims.push(['to', '#iris', { scale: 0, x: -W * 0.43, y: -H * 0.44, duration: 0.5, ease: 'power3.out' }, round(T + 0.05)])
+      } else {
+        anims.push(['fromTo', '#wipev i', { yPercent: -101 }, { yPercent: 0, duration: 0.3, stagger: 0.035, ease: 'power3.in', immediateRender: false }, round(T - 0.56)]) // 8 strips need 0.3 + 7 * 0.035 = 0.545s to cover the frame
+        anims.push(['to', '#wipev i', { yPercent: 101, duration: 0.3, stagger: 0.035, ease: 'power3.out' }, round(T + 0.05)])
+      }
     } else if (ts.transition === 'zoom') {
       anims.push(['to', `#${prev.id}`, { opacity: 0, scale: 0.96, duration: 0.25, ease: 'power2.in' }, round(T - 0.25)])
       anims.push(['from', `#${s.id}`, { opacity: 0, scale: 1.06, duration: 0.45, ease: 'power2.out' }, T])
     }
   })
-  inits.push(['#wipe i', { xPercent: -101 }])
+  inits.push(['#wipe i', { xPercent: -101 }], ['#wipev i', { yPercent: -101 }], ['#iris', { scale: 0 }])
 
   // Chapter chip: consecutive scenes of the same chapter share one.
   const chapters = board.chapters ?? []
@@ -115,6 +131,8 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   body.push('<div id="progress"></div>')
   anims.push(['fromTo', '#progress', { scaleX: 0 }, { scaleX: 1, duration: tl.total, ease: 'none' }, 0])
   body.push(`<div id="wipe">${'<i></i>'.repeat(6)}</div>`)
+  body.push(`<div id="wipev">${'<i></i>'.repeat(8)}</div>`)
+  body.push('<div id="iris"></div>')
 
   // One narration line = one subtitle = one audio clip.
   const flat = tl.scenes.flatMap((ts) => ts.lines.map((line, j) => ({ ts, line, j })))
