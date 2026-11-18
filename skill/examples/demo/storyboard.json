@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "name": "demo",
+    "title": "arch-blueprint 元件示範",
+    "voice": "zh-TW-HsiaoChenNeural",
+    "properNouns": [
+      "arch-blueprint"
+    ]
+  },
+  "chapters": [
+    {
+      "id": "principle",
+      "label": "PRINCIPLE"
+    },
+    {
+      "id": "workflow",
+      "label": "WORKFLOW"
+    },
+    {
+      "id": "result",
+      "label": "RESULT"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "title",
+      "data": {
+        "kicker": "SKILL BREAKDOWN",
+        "title": "arch-blueprint",
+        "subtitle": {
+          "text": "把專案畫成一張黑白藍圖",
+          "at": "一張藍圖"
+        },
+        "tags": [
+          {
+            "text": "SVG",
+            "at": "兩個顏色"
+          },
+          {
+            "text": "2 COLORS",
+            "at": "兩個顏色"
+          },
+          {
+            "text": "OVERVIEW ONLY",
+            "at": "兩個顏色"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "arch-blueprint 是一個畫架構圖的 skill。",
+          "say": "arch-blueprint 是一個畫架構圖的技能。"
+        },
+        {
+          "text": "它只用兩個顏色，把專案畫成一張藍圖。"
+        }
+      ]
+    },
+    {
+      "id": "rule",
+      "type": "statement",
+      "chapter": "principle",
+      "transition": "wipe",
+      "data": {
+        "kicker": "CORE PRINCIPLE",
+        "segments": [
+          {
+            "text": "先分區，",
+            "at": "先分區"
+          },
+          {
+            "text": "再連線",
+            "at": "再連線",
+            "tone": "accent"
+          }
+        ],
+        "note": "RULE 01"
+      },
+      "lines": [
+        {
+          "text": "它的核心精神只有一句話：先分區，再連線。"
+        }
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "flow",
+      "chapter": "workflow",
+      "transition": "wipe",
+      "data": {
+        "title": "從專案到一張圖",
+        "steps": [
+          {
+            "icon": "magnifying-glass",
+            "label": "分析專案",
+            "at": "分析專案"
+          },
+          {
+            "icon": "list-checks",
+            "label": "提案拆解",
+            "tone": "accent",
+            "at": "提案拆解"
+          },
+          {
+            "icon": "blueprint",
+            "label": "產出 SVG",
+            "at": "產出"
+          },
+          {
+            "icon": "shield-check",
+            "label": "自檢",
+            "tone": "accent2",
+            "at": "自檢"
+          }
+        ],
+        "note": {
+          "text": "第二步要等你確認，才會往下走",
+          "at": "確認"
+        }
+      },
+      "lines": [
+        {
+          "text": "整個流程有四步。"
+        },
+        {
+          "text": "分析專案、提案拆解、產出 SVG，最後自檢。",
+          "say": "分析專案、提案拆解、產出向量圖，最後自檢。"
+        },
+        {
+          "text": "其中第二步，要等你確認才會往下走。"
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "type": "file",
+      "chapter": "workflow",
+      "transition": "push",
+      "data": {
+        "path": "arch-blueprint/SKILL.md",
+        "lines": [
+          "## 工作流程",
+          "",
+          "1. 分析專案：讀 README、進入點、資料夾結構",
+          "2. 提案拆解：列出「分區 × 節點 × 資料流」",
+          "   給使用者確認，確認後才開始畫",
+          "3. 產出 SVG：docs/architecture/overview.svg",
+          "4. 自檢：python3 scripts/check.py overview.svg"
+        ],
+        "highlights": [
+          {
+            "from": 4,
+            "to": 5,
+            "at": "拆解方案",
+            "note": "畫之前先確認"
+          },
+          {
+            "from": 7,
+            "at": "自檢",
+            "note": "用腳本檢查"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "這些步驟都寫在 SKILL.md 裡。",
+          "say": "這些步驟都寫在技能說明檔裡。"
+        },
+        {
+          "text": "拆解方案要先給你確認，才會開始畫。"
+        },
+        {
+          "text": "畫完之後，還要用腳本自檢。"
+        }
+      ]
+    },
+    {
+      "id": "overview",
+      "type": "map",
+      "chapter": "result",
+      "transition": "wipe",
+      "data": {
+        "svg": "overview.svg",
+        "focus": [
+          {
+            "zone": "zone-backend",
+            "at": "後端"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "這是它畫出來的成品。"
+        },
+        {
+          "text": "每個虛線框是一個分區，框裡是節點。"
+        },
+        {
+          "text": "拉近看後端這一區，箭頭就是主要的資料流。"
+        }
+      ]
+    },
+    {
+      "id": "limit",
+      "type": "statement",
+      "chapter": "result",
+      "transition": "push",
+      "data": {
+        "segments": [
+          {
+            "text": "一張圖",
+            "at": "一張圖"
+          },
+          {
+            "text": "只說一件事",
+            "at": "只說",
+            "break": true,
+            "tone": "accent"
+          }
+        ],
+        "note": {
+          "text": "MAX 12 NODES · 12 EDGES",
+          "at": "十二"
+        }
+      },
+      "lines": [
+        {
+          "text": "一張圖只說一件事，所以整張圖最多十二個節點。"
+        }
+      ]
+    }
+  ]
+}

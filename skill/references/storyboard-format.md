@@ -1,0 +1,155 @@
+# 分鏡格式
+
+分鏡是一個 JSON 檔，描述整支影片：有哪些章節、每個場景用哪個元件、放什麼內容、旁白怎麼說。
+`arch-video build <分鏡檔>` 讀它產出影片。完整範例見 `examples/demo/storyboard.json`。
+
+## 整體結構
+
+```json
+{
+  "meta": {
+    "name": "demo",
+    "title": "arch-blueprint 元件示範",
+    "voice": "zh-TW-HsiaoChenNeural",
+    "theme": "night",
+    "properNouns": ["arch-blueprint"]
+  },
+  "chapters": [{ "id": "workflow", "label": "WORKFLOW" }],
+  "scenes": [
+    {
+      "id": "rule",
+      "type": "statement",
+      "chapter": "workflow",
+      "transition": "wipe",
+      "data": {},
+      "lines": [{ "text": "字幕顯示的句子。", "say": "實際唸出來的句子。" }]
+    }
+  ]
+}
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `meta.name` | 輸出的資料夾與檔名 |
+| `meta.voice` | 配音的聲音，預設 `zh-TW-HsiaoChenNeural` |
+| `meta.theme` | 主題，預設 `night`；另有 `blueprint` |
+| `meta.properNouns` | 旁白裡可以保留英文的專有名詞 |
+| `chapters` | 章節清單。`label` 顯示在左上角的章節標示，用英文大寫 |
+| `scenes[].id` | 小寫英數與連字號，字母開頭，不可重複 |
+| `scenes[].type` | 場景元件，見下方 |
+| `scenes[].chapter` | 屬於哪一章；不寫就不顯示章節標示 |
+| `scenes[].transition` | 進場轉場：`cut`（預設）、`wipe`、`push`、`zoom` |
+| `scenes[].lines` | 旁白。`text` 是字幕；`say` 是實際唸的話，省略時等於 `text` |
+
+## 觸發點（`at`）
+
+場景裡的元素大多可以加 `at`，決定它什麼時候出現。
+
+| 寫法 | 意思 |
+|---|---|
+| 省略 | 場景內容開始時 |
+| `"分區"` | 旁白唸到「分區」時。依序在各句裡找第一個出現的地方；找不到會報錯 |
+| `2` | 第 3 句開始時（從 0 算） |
+| `{ "line": 1, "offset": 0.4 }` | 第 2 句開始後 0.4 秒 |
+
+只寫字串的欄位，也可以寫成 `{ "text": "...", "at": "..." }` 來加觸發點。
+
+## 場景元件
+
+### `title`：標題
+
+專案名稱以打字方式出現，四角有裁切標記。
+
+```json
+{
+  "kicker": "SKILL BREAKDOWN",
+  "title": "arch-blueprint",
+  "subtitle": { "text": "把專案畫成一張黑白藍圖", "at": "一張藍圖" },
+  "tags": [{ "text": "SVG", "at": "兩個顏色" }]
+}
+```
+
+- `title` 是半形字時才有打字效果。
+
+### `statement`：大字標語
+
+一段一段從下方推上來，下方有一條尺寸標註線。
+
+```json
+{
+  "kicker": "CORE PRINCIPLE",
+  "segments": [
+    { "text": "先分區，", "at": "先分區" },
+    { "text": "再連線", "at": "再連線", "tone": "accent" }
+  ],
+  "note": "RULE 01"
+}
+```
+
+- `kicker` 在場景一開始就出現，旁白鋪陳時畫面才不會空著。
+- `segments[].tone`：`accent` 或 `accent2`，會上色並加底線。
+- `segments[].break`：`true` 代表從這一段換行。
+- `note` 是標註線下方的標籤，可以寫成 `{ "text", "at" }`。
+- 一行太長會警告，請換行或縮短。
+
+### `file`：檔案視窗
+
+顯示一段檔案節錄，旁白講到哪幾行就標出來，並在右側掛註解。
+
+```json
+{
+  "path": "arch-blueprint/SKILL.md",
+  "lines": ["## 工作流程", "", "1. 分析專案"],
+  "highlights": [{ "from": 3, "to": 3, "at": "分析專案", "note": "先讀懂專案" }]
+}
+```
+
+- 最多 11 行；太長的行會被截斷。
+- `highlights[].from`、`to` 是行號（從 1 算），`to` 省略時等於 `from`。
+- `note` 最多約 12 個全形字寬（依主題的字級而定），超過會警告。
+
+### `flow`：流程
+
+2 到 5 個圓圈一字排開，圈裡是圖示，中間用箭頭連接。
+
+```json
+{
+  "title": "從專案到一張圖",
+  "steps": [
+    { "icon": "magnifying-glass", "label": "分析專案", "at": "分析專案" },
+    { "icon": "list-checks", "label": "提案拆解", "tone": "accent", "at": "提案拆解" }
+  ],
+  "note": { "text": "第二步要等你確認，才會往下走", "at": "確認" }
+}
+```
+
+- `icon` 是 Phosphor 圖示的名稱（https://phosphoricons.com）；寫錯會報錯並列出相近的名稱。
+- `tone`：`ink`（預設）、`accent`、`accent2`。
+
+### `map`：藍圖地圖
+
+直接使用 arch-blueprint 產出的 SVG。分區、節點、連線依序畫出來；旁白講到某一區時鏡頭拉近。
+
+```json
+{
+  "svg": "overview.svg",
+  "focus": [{ "zone": "zone-backend", "at": "後端" }]
+}
+```
+
+- `svg` 的路徑相對於分鏡檔。
+- `focus[].zone` 是 SVG 裡分區的 id；寫 `null` 代表拉回全圖。
+- `title: true` 才顯示 SVG 自己的圖名，預設不顯示。
+- 圖的顏色會自動換成目前主題的底色與線條色。
+
+## 產出
+
+```
+out/<name>/<name>.mp4          影片
+out/<name>/stills/sheet.jpg    每個場景一張的靜態預覽總表
+out/<name>/stills/NN-<id>.png  各場景的靜態預覽圖
+out/<name>/timeline.json       各場景、各句的起訖時間
+out/<name>/project/            HyperFrames 專案（中間產物）
+```
+
+`--stills-only` 只產出預覽圖，不渲染影片。`--theme <主題>` 可臨時換主題，輸出到 `out/<name>-<主題>/`。
