@@ -1,8 +1,8 @@
-// flow：流程。幾個圓圈一字排開，圈裡是彩色圖示，中間用箭頭連起來；旁白講到哪一步，那一步才出現。
+// flow: circles in a row with tinted icons, joined by arrows; each step appears when the narration reaches it.
 // data: {
 //   title?: string | { text, at },
-//   steps: [{ icon, label, tone?: "ink" | "accent" | "accent2", at? }],   2–5 步；icon 是 Phosphor 圖示名稱
-//   note?: string | { text, at }                                          下方的膠囊註解
+//   steps: [{ icon, label, tone?: "ink" | "accent" | "accent2", at? }],   2-5 steps; icon is a Phosphor icon name
+//   note?: string | { text, at }                                          pill caption under the row
 // }
 import { esc, norm, isWide } from '../lib/util.mjs'
 import { icon } from '../lib/icons.mjs'
@@ -17,12 +17,12 @@ export default function flow(scene, ctx) {
   const title = norm(d.title)
   const note = norm(d.note)
   const n = steps.length
-  const D = n <= 3 ? 200 : n === 4 ? 180 : 150 // 圓圈直徑
-  const pitch = n <= 3 ? 440 : n === 4 ? 380 : 310 // 圓心間距
+  const D = n <= 3 ? 200 : n === 4 ? 180 : 150 // circle diameter
+  const pitch = n <= 3 ? 440 : n === 4 ? 380 : 310 // distance between circle centres
   const { width: W } = ctx.theme.stage
   const x0 = (W - pitch * (n - 1)) / 2
   const cy = title ? 330 : 290
-  const L = pitch - D - 36 // 箭頭長度
+  const L = pitch - D - 36 // arrow length
   const labW = pitch - 20
 
   const parts = []
@@ -64,7 +64,7 @@ export default function flow(scene, ctx) {
     ctx.from(`.s${i} .ico`, { opacity: 0, scale: 0.5, duration: 0.45, ease: 'back.out(1.8)' }, t + 0.15)
     ctx.from(`.s${i} .lab`, { opacity: 0, y: 12, duration: 0.35, ease: 'power2.out' }, t + 0.3)
     if (i < n - 1) {
-      // 箭頭在下一步出現前畫好，圓點沿著箭頭滑到中途
+      // The arrow is drawn just before the next step appears; the dot slides part-way along it.
       const ta = Math.max(t + 0.5, times[i + 1] - 0.5)
       ctx.from(`.a${i} .ln`, { scaleX: 0, duration: 0.4, ease: 'power1.inOut' }, ta)
       ctx.from(`.a${i} .hd`, { opacity: 0, duration: 0.1 }, ta + 0.35)

@@ -1,5 +1,5 @@
-// 圖示：Phosphor 的 duotone 版本（MIT）。圖示是單色加一層淡色填滿，顏色跟著所在元素的文字顏色，
-// 所以用主題的強調色就能上色，不必另外準備彩色圖檔。圖示名稱見 https://phosphoricons.com
+// Phosphor duotone icons (MIT). Each icon is one colour plus a faint fill layer and takes the text colour of its
+// container, so theme accents tint it without separate coloured assets. Icon names: https://phosphoricons.com
 import fs from 'node:fs'
 import path from 'node:path'
 import { ROOT } from './util.mjs'

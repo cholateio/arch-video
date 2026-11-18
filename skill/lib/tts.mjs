@@ -1,5 +1,5 @@
-// 配音層：一句旁白 → 一個音檔 + 秒數 + 字詞時間戳。以「音色＋語速＋文字」為鍵快取。
-// 目前只有 edge-tts 一個實作；連不上時退回估算時間（沒有聲音，影片仍可產出）。
+// TTS layer: one narration line -> one audio file, its duration and word timestamps. Cached by voice + rate + text.
+// edge-tts is the only engine for now; when it is unreachable a line falls back to an estimated duration (no audio, the video still builds).
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
@@ -9,7 +9,7 @@ import { hash, isWide } from './util.mjs'
 const probe = (file) =>
   parseFloat(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString())
 
-// 連不上配音服務時的估算：全形字每字 0.23 秒、英文詞每詞 0.34 秒、標點停頓 0.28 秒
+// Fallback estimate: 0.23s per full-width char, 0.34s per Latin word, 0.28s pause per punctuation mark.
 function estimate(text) {
   const tokens = text.match(/[A-Za-z0-9_.\-/]+|[^\sA-Za-z0-9_.\-/]/g) ?? []
   const words = []
@@ -22,7 +22,7 @@ function estimate(text) {
   return { duration: t / 1000 + 0.1, words }
 }
 
-// edge-tts：把一句話合成到 mp3，回傳字詞時間戳
+// edge-tts: synthesise one line to mp3 and return its word timestamps.
 async function edge(text, { voice, rate, proxy }, mp3) {
   const tts = new EdgeTTS({ voice, lang: voice.split('-').slice(0, 2).join('-'), rate, saveSubtitles: true, timeout: 15000, proxy })
   await tts.ttsPromise(text, mp3)
@@ -31,8 +31,8 @@ async function edge(text, { voice, rate, proxy }, mp3) {
   return words
 }
 
-// 熔斷：配音服務連不上時，每一句都要等逾時才會失敗。連續 BREAK_AFTER 句失敗就視為服務不通，
-// 這次執行剩下的句子直接改用估算時間，不再逐句等待。
+// Circuit breaker: when the service is unreachable, every line only fails after a timeout. After BREAK_AFTER
+// consecutive failed lines the service is treated as down and the rest of this run goes straight to the estimate.
 const ATTEMPTS = 2
 const BREAK_AFTER = 2
 let failedInARow = 0

@@ -1,4 +1,4 @@
-// 配音層的單元測試：用假的合成器，不連網。
+// TTS layer tests with a fake synthesiser; no network.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -16,10 +16,10 @@ test('配音服務連不上時，連續兩句失敗後就不再嘗試', async ()
 
   const a = await synth('第一句。', opts)
   const b = await synth('第二句。', opts)
-  assert.equal(calls, 4) // 每句試兩次
+  assert.equal(calls, 4) // two attempts per line
   const c = await synth('第三句。', opts)
   const d = await synth('第四句。', opts)
-  assert.equal(calls, 4) // 熔斷後不再呼叫
+  assert.equal(calls, 4) // no calls once the breaker is open
 
   for (const r of [a, b, c, d]) {
     assert.equal(r.estimated, true)

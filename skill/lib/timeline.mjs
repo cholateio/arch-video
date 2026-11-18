@@ -1,17 +1,17 @@
-// 時間軸：由每句旁白的音檔秒數排出各場景、各句的起訖時間，並把「觸發點」換算成秒。
+// Timeline: lays out scene and line start/end times from the measured audio durations, and resolves cues to seconds.
 import { round } from './util.mjs'
 
-// 進場轉場佔用的時間（場景內容在這之後才開始）
+// Time taken by the incoming transition; scene content starts after it.
 export const LEAD = { cut: 0.3, push: 0.7, wipe: 0.65, zoom: 0.5 }
-const GAP = 0.35 // 句與句之間的留白
-const TAIL = 0.6 // 場景最後一句講完後的停留
-const TAIL_BEFORE_WIPE = 0.8 // 下一個場景用擦除轉場時多留一點，讓擦除不蓋到話尾
+const GAP = 0.35 // gap between lines
+const TAIL = 0.6 // hold after a scene's last line
+const TAIL_BEFORE_WIPE = 0.8 // longer hold when the next scene wipes in, so the wipe does not cover the end of the line
 
 export function buildTimeline(board, spoken) {
   let t = 0
   const scenes = board.scenes.map((s, i) => {
     if (!((s.transition ?? 'cut') in LEAD)) throw new Error(`場景 ${s.id}：不認得的轉場「${s.transition}」`)
-    const transition = i === 0 ? 'cut' : (s.transition ?? 'cut') // 第一個場景沒有前一個畫面，一律直接開始
+    const transition = i === 0 ? 'cut' : (s.transition ?? 'cut') // the first scene has nothing before it, so it always cuts in
     const start = t
     const contentStart = start + LEAD[transition]
     let cursor = contentStart + 0.2
@@ -30,7 +30,7 @@ export function buildTimeline(board, spoken) {
   return { scenes, total: round(t) }
 }
 
-// 一句話裡每個字（不含空白）的時間。斷詞會把詞切開，所以用字元位置對時間，不直接比對詞。
+// Time of every non-space char in a line. TTS word segmentation splits words, so cues are matched by char position, not by word.
 function charTimes(line) {
   const chars = []
   for (const w of line.words) {
@@ -40,11 +40,11 @@ function charTimes(line) {
   return chars
 }
 
-// 觸發點寫法：
-//   省略         場景內容開始時
-//   2            第 3 句（從 0 算）開始時
-//   "分區"       旁白講到「分區」這個詞時（依序在各句裡找第一個出現處）
-//   { line: 1, offset: 0.4 }  第 2 句開始後 0.4 秒
+// Cue forms:
+//   omitted       when the scene content starts
+//   2             when the 3rd line (0-based) starts
+//   "keyword"     when the narration reaches that word (first occurrence, searching the lines in order)
+//   { line: 1, offset: 0.4 }  0.4s after the 2nd line starts
 export function cueTime(scene, at) {
   if (at == null) return scene.contentStart
   if (typeof at === 'number') {

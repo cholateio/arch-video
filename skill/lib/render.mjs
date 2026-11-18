@@ -1,4 +1,4 @@
-// 呼叫 HyperFrames。一律關閉遙測，也不使用任何會上傳的指令（publish、share、cloud）。
+// Single entry point for HyperFrames: telemetry is always off and the upload commands (publish, share, cloud) are never used.
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { ROOT } from './util.mjs'

@@ -1,15 +1,15 @@
-// map：藍圖地圖。直接使用 arch-blueprint 產出的 SVG：分區、節點、連線依序畫出來，
-// 旁白講到某一區時鏡頭拉近那一區，其他部分淡掉。
-// data: { svg, at?, title?: true, focus?: [{ zone: "<分區 id>" | null, at }] }
-//   title 預設不顯示 SVG 自己的圖名（影片裡由旁白與章節標示交代）；寫 true 才顯示。
-//   zone 寫 arch-blueprint SVG 裡分區的 id（例如 "zone-backend"）；寫 null 代表拉回全圖。
+// map: animates the SVG that arch-blueprint produces. Zones, nodes and edges draw in order;
+// when the narration reaches a zone the camera zooms to it and everything else dims.
+// data: { svg, at?, title?: true, focus?: [{ zone: "<zone id>" | null, at }] }
+//   title: the SVG's own heading is hidden unless true (narration and the chapter chip cover it).
+//   zone: a zone id from the arch-blueprint SVG (e.g. "zone-backend"); null zooms back out.
 import fs from 'node:fs'
 import path from 'node:path'
 import { load } from 'cheerio'
 
 const num = (el, name) => Number(el.attr(name))
 
-// 讀出路徑的起點與終點（arch-blueprint 的連線只用 M/H/V/L 與相對弧線 a）
+// Start and end points of a path (arch-blueprint edges only use M/H/V/L and the relative arc a).
 function endpoints(d) {
   let x = 0, y = 0, start = null
   const pts = []
@@ -36,7 +36,7 @@ const inside = (p, r, pad = 0) => p.x >= r.x - pad && p.x <= r.x + r.w + pad && 
 export default function map(scene, ctx) {
   const d = scene.data
   const file = path.resolve(ctx.baseDir, d.svg)
-  // arch-blueprint 的圖固定用紙色與墨黑兩個顏色，這裡換成目前主題的底色與線條色
+  // arch-blueprint diagrams hard-code two colours (paper and ink); swap them for the theme's ground and line colours.
   const { paper, surface, ink } = ctx.theme.color
   const source = fs.readFileSync(file, 'utf8').replace(/#1a1a1a/gi, ink).replace(/#faf8f4/gi, paper)
   const $ = load(source, { xml: true })
@@ -46,7 +46,7 @@ export default function map(scene, ctx) {
   const stage = ctx.theme.mapStage
   const aspect = stage.width / stage.height
 
-  // 清掉背景底色與說明文字，只留圖本身
+  // Drop the background and metadata; keep the drawing.
   svg.children('rect').filter((_, el) => !$(el).attr('class') && num($(el), 'width') >= vw).remove()
   svg.attr('color', ink)
   svg.children('title, desc').remove()
@@ -56,7 +56,7 @@ export default function map(scene, ctx) {
   if (showTitle) heading.addClass('heading')
   else heading.remove()
 
-  // 量出各分區、節點、連線的位置，決定拉近時誰留下、誰淡掉
+  // Measure zones, nodes and edges to decide what stays lit when zooming.
   const zones = $('g.zone').toArray().map((el) => {
     const r = $(el).children('rect').first()
     return { id: $(el).attr('id'), x: num(r, 'x'), y: num(r, 'y'), w: num(r, 'width'), h: num(r, 'height') }
@@ -68,7 +68,7 @@ export default function map(scene, ctx) {
   const edges = $('path.edge').toArray().map((el) => ({ id: $(el).attr('id'), dashed: !!$(el).attr('stroke-dasharray'), ...endpoints($(el).attr('d')) }))
   const labels = $('g.label').toArray().map((el) => ({ id: $(el).attr('id'), edge: $(el).attr('data-edge') }))
 
-  // 實線改成可以「畫出來」的線；箭頭另外放一份，線畫完才顯示（否則箭頭會先出現在終點）
+  // Solid edges become drawable strokes. The arrowhead is a separate copy shown once the stroke finishes; otherwise it would sit at the end point from the start.
   $('path.edge').each((_, el) => {
     const e = $(el)
     if (e.attr('stroke-dasharray')) return
@@ -80,7 +80,7 @@ export default function map(scene, ctx) {
   })
   $('g.node > rect').attr('fill', surface).attr('pathLength', '1').attr('stroke-dasharray', '1').attr('stroke-dashoffset', '1')
 
-  // 同一支影片可能放好幾張圖，id 加上場景前綴避免互相衝突
+  // A video may hold several diagrams: prefix ids with the scene id so they cannot collide.
   const P = `${ctx.id}-`
   $('[id]').each((_, el) => { $(el).attr('id', P + $(el).attr('id')) })
   $('[href]').each((_, el) => { const h = $(el).attr('href'); if (h.startsWith('#')) $(el).attr('href', `#${P}${h.slice(1)}`) })
@@ -88,14 +88,14 @@ export default function map(scene, ctx) {
     $(`[${a}]`).each((_, el) => { const v = $(el).attr(a); if (v.includes('url(#')) $(el).attr(a, v.replace(/url\(#/g, `url(#${P}`)) })
   }
 
-  // 鏡頭：viewBox 一律補成舞台的長寬比，拉近拉遠時畫面才不會跳
+  // Camera: every viewBox is padded to the stage aspect ratio so zooming does not jump.
   const fit = (r, pad) => {
     let w = r.w + pad * 2, h = r.h + pad * 2
     if (w / h < aspect) w = h * aspect
     else h = w / aspect
     return [r.x + r.w / 2 - w / 2, r.y + r.h / 2 - h / 2, w, h].map((n) => Math.round(n * 10) / 10).join(' ')
   }
-  // 全圖：貼齊分區、節點與連線的外框，不含 SVG 四周的留白
+  // Full view: fit the bounds of zones, nodes and edges, without the SVG's outer margin.
   const xs = [], ys = []
   zones.forEach((z) => { xs.push(z.x, z.x + z.w); ys.push(z.y, z.y + z.h) })
   nodes.forEach((n) => { xs.push(n.c.x - 96, n.c.x + 96); ys.push(n.c.y - 32, n.c.y + 32) })
@@ -126,7 +126,7 @@ export default function map(scene, ctx) {
     labels.filter((l) => l.edge === e.id).forEach((l) => ctx.from(S(l.id), { opacity: 0, duration: 0.25 }, t + 0.4))
   })
 
-  // 拉近：旁白講到某一區時
+  // Zoom when the narration reaches a zone.
   const dim = ctx.theme.dim
   const steps = (d.focus ?? []).map((f) => ({ ...f, t: ctx.t(f.at) })).sort((a, b) => a.t - b.t)
   let lit = null

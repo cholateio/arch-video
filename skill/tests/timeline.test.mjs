@@ -1,4 +1,4 @@
-// 時間軸與觸發點的單元測試。不連網、不渲染。
+// Timeline and cue tests. No network, no rendering.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildTimeline, cueTime, LEAD } from '../lib/timeline.mjs'
@@ -34,7 +34,7 @@ test('觸發詞被斷詞切開時，取第一個字開始的時間', () => {
 
 test('觸發詞落在一個詞的中間時，按字數比例估算', () => {
   const s = scene()
-  // 「分區。」佔 1100–1900ms 共三個字，「區」是第二個字
+  // The last word spans 1100-1900ms over three chars; the cue is its second char.
   assert.equal(cueTime(s, '區'), Math.round((s.lines[0].start + 1.1 + 0.8 / 3) * 1000) / 1000)
 })
 
@@ -69,11 +69,11 @@ test('場景依序排列，句子之間留白，擦除轉場前多停一下', ()
   const tl = buildTimeline(board, spoken({ 'a:0': d(1), 'a:1': d(1), 'b:0': d(2), 'c:0': d(1) }))
   const [a, b, c] = tl.scenes
   assert.equal(a.start, 0)
-  assert.equal(a.transition, 'cut') // 第一個場景一律直接開始
-  assert.ok(a.lines[1].start > a.lines[0].end) // 句間留白
+  assert.equal(a.transition, 'cut') // the first scene always cuts in
+  assert.ok(a.lines[1].start > a.lines[0].end) // gap between lines
   assert.equal(b.start, a.end)
   assert.equal(b.contentStart, Math.round((b.start + LEAD.wipe) * 1000) / 1000)
-  // a 後面接擦除轉場，話尾停留比 b（後面接 push）長
+  // a is followed by a wipe, so it holds longer after its last line than b (followed by a push)
   assert.ok(a.end - a.lines[1].end > b.end - b.lines[0].end)
   assert.equal(tl.total, c.end)
 })

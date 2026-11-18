@@ -1,4 +1,4 @@
-// 合成：分鏡 + 時間軸 + 場景元件 + 主題 → 一個 HyperFrames 專案（index.html 與它用到的字型、音檔）。
+// Storyboard + timeline + scene components + theme -> a HyperFrames project (index.html plus the fonts and audio it uses).
 import fs from 'node:fs'
 import path from 'node:path'
 import scenes from '../scenes/index.mjs'
@@ -10,7 +10,7 @@ const FONTS = [
   ['@fontsource/noto-sans-tc', ['400.css', '700.css']],
 ]
 
-// 字型隨專案附帶：從 npm 套件複製到專案裡，渲染時不需要連網
+// Fonts are copied from the npm packages into the project so rendering needs no network.
 function installFonts(buildDir) {
   const dir = path.join(buildDir, 'fonts')
   fs.mkdirSync(dir, { recursive: true })
@@ -53,7 +53,6 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   const inits = []
   const body = []
 
-  // 場景
   board.scenes.forEach((s, i) => {
     const ts = tl.scenes[i]
     const render = scenes[s.type]
@@ -74,14 +73,13 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     }
     const before = anims.length
     const inner = render(s, ctx)
-    // 場景開始後畫面不能空白太久：第一個元素要在 1.5 秒內出現
+    // A scene must not open on an empty frame: the first element has to appear within 1.5s.
     const first = Math.min(...anims.slice(before).map((a) => a.at(-1)))
     if (first - ts.contentStart > 1.5) warn(`場景 ${s.id}：開場後 ${round(first - ts.contentStart)} 秒畫面才有東西，請讓第一個元素早點出現`)
     const next = tl.scenes[i + 1]
     const duration = round(ts.end - ts.start + (next?.transition === 'push' ? LEAD.push : 0))
     body.push(`<section id="${s.id}" class="scene clip" data-start="${ts.start}" data-duration="${duration}">\n${inner}\n</section>`)
 
-    // 進場轉場
     const T = ts.start
     const prev = tl.scenes[i - 1]
     if (ts.transition === 'push') {
@@ -97,7 +95,7 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   })
   inits.push(['#wipe i', { xPercent: -101 }])
 
-  // 章節標示：同一章的連續場景共用一個
+  // Chapter chip: consecutive scenes of the same chapter share one.
   const chapters = board.chapters ?? []
   let run = null
   const runs = []
@@ -118,7 +116,7 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   anims.push(['fromTo', '#progress', { scaleX: 0 }, { scaleX: 1, duration: tl.total, ease: 'none' }, 0])
   body.push(`<div id="wipe">${'<i></i>'.repeat(6)}</div>`)
 
-  // 字幕與旁白：一句旁白 = 一行字幕 = 一段音檔
+  // One narration line = one subtitle = one audio clip.
   const flat = tl.scenes.flatMap((ts) => ts.lines.map((line, j) => ({ ts, line, j })))
   flat.forEach(({ ts, line, j }, n) => {
     const text = line.text.replace(/[。．.]\s*$/, '')
@@ -136,7 +134,7 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   fs.copyFileSync(path.join(ROOT, 'node_modules/gsap/dist/gsap.min.js'), path.join(buildDir, 'gsap.min.js'))
   const css = [installFonts(buildDir), rootVars(theme), fs.readFileSync(path.join(ROOT, 'themes/base.css'), 'utf8')].join('\n')
   const markup = body.join('\n')
-  // 畫面上會出現的所有字，用來在第一格之前把字型載完
+  // Every glyph that appears on screen, so the fonts finish loading before the first frame.
   const glyphs = [...new Set(markup.replace(/<[^>]+>/g, '').replace(/&(amp|lt|gt|quot);/g, '&<>"'))].filter((c) => c.trim()).join('')
   const json = (x) => JSON.stringify(x).replace(/</g, '\\u003c')
 

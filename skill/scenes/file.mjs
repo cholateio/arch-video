@@ -1,11 +1,11 @@
-// file：檔案視窗。顯示一段檔案節錄，旁白講到哪幾行，就標出那幾行並在右側掛註解。
+// file: a window showing a file excerpt; the lines being narrated are highlighted and get a callout on the right.
 // data: { path, lines: [string], at?, highlights?: [{ from, to?, at, note? }] }
 import { esc, isWide, textPx } from '../lib/util.mjs'
 
 const MAX_ROWS = 11
 const ROW_H = 54
-const TEXT_W = 1048 // 視窗寬度扣掉行號欄與右側留白
-const NOTE_W = 424 // 註解文字可用的寬度（註解欄 500 扣掉引線）
+const TEXT_W = 1048 // window width minus the line-number column and right padding
+const NOTE_W = 424 // width available to callout text (500px column minus the leader line)
 
 export default function file(scene, ctx) {
   const d = scene.data
@@ -27,7 +27,7 @@ export default function file(scene, ctx) {
     if (h.from < 1 || h.to > lines.length) throw new Error(`場景 ${scene.id}：標示範圍 ${h.from}–${h.to} 超出節錄的行數`)
     if (h.note && [...h.note].reduce((n, c) => n + (isWide(c) ? 1 : 0.56), 0) * type.note > NOTE_W) ctx.warn(`註解「${h.note}」太長，會超出畫面（最多約 ${Math.floor(NOTE_W / type.note)} 個全形字）`)
   })
-  // 視窗在舞台裡垂直置中
+  // The window is vertically centred in the stage.
   const winH = 3 + 64 + 22 + lines.length * ROW_H + 22 + 3
   const winTop = Math.max(0, Math.round((ctx.theme.stage.height - winH) / 2))
   const rowTop = (n) => winTop + 3 + 64 + 22 + (n - 1) * ROW_H

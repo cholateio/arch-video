@@ -44,7 +44,7 @@
 ## Conventions
 
 - Conventional commits（`type(scope): 摘要`）；commit 前跑 `npm --prefix skill test`。
-- 程式註解與給使用者的訊息用繁體中文；程式識別字用英文。
+- 程式內註解與識別字用英文；給使用者的訊息（指令輸出、錯誤、警告）與文件用繁體中文。
 - 新增場景元件：在 `skill/scenes/` 加一個檔案並登記到 `index.mjs`，樣式加進 `themes/base.css`，
   用法寫進 `skill/references/storyboard-format.md`。
 - 改了畫面就重跑 `npm --prefix skill run demo`，並實際看 `stills/sheet.jpg`。

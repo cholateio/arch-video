@@ -1,5 +1,5 @@
-// title：標題場景。專案名稱以打字方式出現，四角是工程圖的裁切標記。
-// data: { kicker?, title, subtitle?, tags?: [] }   每個欄位可寫成 { text, at }
+// title: the project name is typed out; engineering crop marks sit in the four corners.
+// data: { kicker?, title, subtitle?, tags?: [] }   each field may be { text, at }
 import { esc, norm, isWide, textPx } from '../lib/util.mjs'
 
 export default function title(scene, ctx) {
@@ -9,8 +9,8 @@ export default function title(scene, ctx) {
   const S = norm(d.subtitle)
   const tags = (d.tags ?? []).map(norm)
   const chars = [...T.text]
-  const typed = chars.every((c) => !isWide(c)) // 打字效果只適用等寬的半形字
-  // 從大到小挑第一個放得下的字級（全形字比半形字寬，所以看實際寬度，不看字數）
+  const typed = chars.every((c) => !isWide(c)) // the typing effect needs fixed-width (half-width) chars
+  // Pick the largest size that fits. Full-width chars are wider, so measure the rendered width instead of counting chars.
   const sizes = ctx.theme.type.title
   const room = (size) => ctx.theme.stage.width - ctx.theme.layout.inset * 2 - size * 0.7
   const size = sizes.find((sz) => textPx(T.text, sz) <= room(sz)) ?? sizes.at(-1)
@@ -51,7 +51,7 @@ export default function title(scene, ctx) {
   if (S) ctx.from('.st', { opacity: 0, y: 18, duration: 0.45, ease: 'power2.out' }, tS)
   let tTag = tS + 0.28
   tags.forEach((tag, i) => {
-    tTag = Math.max(tag.at != null ? ctx.t(tag.at) : tTag, tTag + 0.12) // 同時觸發的標籤自動錯開
+    tTag = Math.max(tag.at != null ? ctx.t(tag.at) : tTag, tTag + 0.12) // tags that share a cue are staggered
     ctx.from(`.tags li:nth-child(${i + 1})`, { opacity: 0, y: 14, duration: 0.3, ease: 'power2.out' }, tTag)
   })
   return html

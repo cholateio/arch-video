@@ -1,6 +1,6 @@
-// statement：大字標語。一段一段從遮罩下方推上來，下方用工程圖的尺寸標註線掛一個標籤。
+// statement: a large phrase revealed segment by segment from behind a mask, with an engineering dimension line and label below.
 // data: { kicker?, segments: [{ text, at?, tone?: "accent" | "accent2", break? }], note?: string | { text, at } }
-//   kicker 是標語上方的小標，場景一開始就出現，避免旁白鋪陳時畫面空白。
+//   kicker: small label above the phrase, shown as soon as the scene starts so the frame is not empty during the lead-in.
 import { esc, norm, isWide } from '../lib/util.mjs'
 
 const units = (s) => [...s].reduce((n, c) => n + (isWide(c) ? 1 : 0.56), 0)
