@@ -42,6 +42,9 @@
 
 arch-blueprint 自己要求的「畫圖前確認拆解」併入第 5 步，不另外停 **[user]**。
 
+給 Claude 的操作步驟寫在 `skill/SKILL.md`；第 0 步是 `arch-video doctor`，第 4、6–10 步是 `arch-video build`。
+成果放在目標 repo 的 `docs/video/`（分鏡）與 `docs/video/out/`（產出，不進版控）**[mine]**。
+
 ## 3. 視覺
 
 主題可切換：`skill/themes/<名稱>.mjs` 放該主題的所有設計數值，`skill/themes/base.css` 與場景元件只引用這些值。
@@ -95,7 +98,7 @@ arch-blueprint 自己要求的「畫圖前確認拆解」併入第 5 步，不�
 - **[user]** 渲染引擎 HyperFrames（Apache 2.0；HTML 加時間屬性，無頭 Chrome 逐格渲染，ffmpeg 編碼）。
 - **[mine]** 只用自己的元件與四種轉場，不取用 HyperFrames 目錄裡的現成區塊造型。
 - **[mine]** 腳本全用 Node，不依賴 bash 或 Python，Windows 與 WSL 跑同一套。
-- **[mine]** 優先使用機器上已安裝的 Chrome 或 Edge。
+- **[mine]** 可以用環境變數 `HYPERFRAMES_BROWSER_PATH` 指定機器上已安裝的 Chrome；沒指定時 HyperFrames 第一次渲染會自動下載。
 - **[mine]** 第一步先渲染 5 秒短片驗證；失敗就退回「Playwright 逐格截圖加 ffmpeg」自製方案。
 
 ## 6. Repo

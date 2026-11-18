@@ -17,8 +17,9 @@
 ## File layout
 
 - `skill/` — skill 本體，可整個資料夾複製後 `npm install` 使用
-  - `skill/scripts/arch-video.mjs` — 指令進入點：`build <分鏡檔>`
-  - `skill/lib/` — 產片流程：`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`icons`、`util`
+  - `skill/SKILL.md` — 給 Claude 的工作流程：體檢、分析、寫腳本與分鏡、預覽、審核點、渲染、交付
+  - `skill/scripts/arch-video.mjs` — 指令進入點：`doctor`、`build <分鏡檔>`
+  - `skill/lib/` — `doctor`（體檢）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`icons`、`util`
   - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式
   - `skill/references/` — 寫腳本與分鏡的規則：`script-rules.md`、`storyboard-format.md`

@@ -18,8 +18,9 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 
 | Command | Purpose |
 |---------|---------|
-| `npm test` | 單元測試：時間軸、觸發點、配音的快取與熔斷。不連網、不渲染，不到一秒跑完 |
-| `npm run demo` | 整條流程跑一次：配音、合成、lint、預覽圖、渲染。lint 有錯會以非零結束 |
+| `node scripts/arch-video.mjs doctor` | 體檢：Node、相依套件、ffmpeg、無頭 Chrome、配音連線。缺套件時也能跑 |
+| `npm test` | 單元測試：時間軸、觸發點、配音的快取與熔斷、體檢。不連網、不渲染，不到一秒跑完 |
+| `npm run demo` | 整條流程跑一次：配音、合成、lint、預覽圖、渲染、成品檢查。任一步失敗會以非零結束 |
 | `npm run stills` | 同上但不渲染影片，只產出預覽圖；改版面時用這個比較快 |
 | `node scripts/arch-video.mjs build <分鏡檔>` | 產出任一份分鏡的影片 |
 | `... --theme blueprint` | 臨時換主題，輸出到 `out/<name>-blueprint/` |
@@ -32,9 +33,13 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 | Variable | Purpose |
 |----------|---------|
 | `HTTPS_PROXY` | 選填。配音連線要經過代理伺服器時設定 |
+| `HYPERFRAMES_BROWSER_PATH` | 選填。指定已安裝的 Chrome 執行檔，HyperFrames 就不會自己下載 |
 
 ## Easy to forget
 
+- **`hyperframes browser path` 會順便下載 Chrome**，不是唯讀指令。體檢因此只看環境變數與快取資料夾，不呼叫它。
+- **進入點用動態載入**：`scripts/arch-video.mjs` 依指令才載入模組，沒裝相依套件時 `doctor` 才跑得起來。
+  `lib/doctor.mjs` 不可以在檔案開頭載入 `node_modules` 裡的東西。
 - **`<audio>` 一定要有 `id`**，否則 HyperFrames 渲染出來沒有聲音，而且不會報錯（lint 才會抓到）。
 - **觸發詞用字元位置對時間。** 配音服務的斷詞會把詞切開（「十二個」變成「十」「二個」），
   所以 `timeline.mjs` 把各段文字接起來找起始字元，不直接比對詞。
@@ -53,7 +58,8 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 
 ## Not verified yet
 
-- Windows 原生環境還沒跑過整條流程。
+- Windows 原生環境還沒跑過整條流程；體檢找 Chrome 快取的位置（`~/.cache/hyperframes/chrome`）在 Windows 上未確認，找不到時只會列為「注意」。
+- `SKILL.md` 的整條流程還沒有實際跑過一次。
 - Morph 轉場尚未實作；`zoom` 轉場寫好了但示範片沒有用到。
 
 ## Docs map

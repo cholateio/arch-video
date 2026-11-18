@@ -140,13 +140,13 @@
       "data": {
         "path": "arch-blueprint/SKILL.md",
         "lines": [
-          "## 工作流程",
+          "## 工作流程（依序執行，不可跳過確認步）",
           "",
-          "1. 分析專案：讀 README、進入點、資料夾結構",
-          "2. 提案拆解：列出「分區 × 節點 × 資料流」",
-          "   給使用者確認，確認後才開始畫",
-          "3. 產出 SVG：docs/architecture/overview.svg",
-          "4. 自檢：python3 scripts/check.py overview.svg"
+          "1. 分析專案：讀 README、進入點、資料夾結構與主要 import 關係…",
+          "2. 提案拆解：用文字列出打算畫的「分區 × 節點 × 主要資料流」清單…",
+          "   粒度不對就調整，確認後才開始畫。",
+          "3. 產出 SVG：依下方規則寫出 docs/architecture/overview.svg",
+          "4. 自檢：先跑腳本，再逐項過自檢清單，全部修正後才交付："
         ],
         "highlights": [
           {

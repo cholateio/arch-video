@@ -9,7 +9,7 @@
 - **架構圖會自己畫出來**：直接讀 [arch-blueprint](https://github.com/cholateio/arch-blueprint) 產出的 SVG，分區、節點、連線依序畫出，講到哪一區就拉近到哪一區。
 - **分鏡寫錯會先告訴你**：旁白裡找不到觸發詞、字幕超過一行、場景開場空白太久，都會在渲染前報出來。
 
-目前只完成「分鏡檔 → 影片」這一段；從 repo 自動寫出分鏡的 skill 本體還在開發中。
+場景元件目前只有五種，適合介紹 skill 與 MCP server 類的專案；Windows 上還沒有完整測試過。
 
 ## How it works
 
@@ -26,10 +26,13 @@
 
 1. 下載這個 repo，進入 `skill` 資料夾。
 2. 執行 `npm install`。
-3. 執行 `npx hyperframes browser ensure`，取得渲染用的無頭 Chrome。
-4. 執行 `npm run demo`，示範片會出現在 `out/demo/demo.mp4`。
+3. 執行 `node scripts/arch-video.mjs doctor`，它會告訴你還缺什麼。
+4. 執行 `npm run demo`，示範片會出現在 `out/demo/demo.mp4`。第一次會自動下載渲染用的無頭 Chrome。
 
-要做自己的影片，複製 `examples/demo/storyboard.json` 來改，格式見 `references/storyboard-format.md`，
+要讓 Claude Code 替你從一個 repo 做出影片，把 `skill` 資料夾複製成 `~/.claude/skills/arch-video`，然後對它說「把這個專案做成架構解說影片」。
+它會先給你看架構拆解、腳本和每個場景的預覽圖，你放行後才渲染。
+
+要自己寫分鏡，複製 `examples/demo/storyboard.json` 來改，格式見 `references/storyboard-format.md`，
 然後執行 `node scripts/arch-video.mjs build <你的分鏡檔>`。
 
 ## Privacy & security
