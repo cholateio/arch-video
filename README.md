@@ -1,0 +1,43 @@
+# arch-video
+
+你想向其他工程師介紹一個專案的架構，但做一支解說影片要寫腳本、畫圖、配音、對時間。寫好一份分鏡檔，跑一個指令，就得到一支有旁白、字幕和章節的 1080p 影片。
+
+![示範片的六個場景：打字出現的標題、大字標語、四個步驟的流程、標出重點行的檔案視窗、拉近到後端分區的架構圖、結尾標語](docs/images/hero.jpg)
+
+- **旁白帶動畫面**：每句旁白先合成語音、量出秒數，畫面上的元素在旁白講到那個詞的時候才出現。
+- **固定的場景元件**：標題、大字標語、檔案視窗、流程、架構圖五種，你只填內容，版面與動畫是現成的。
+- **架構圖會自己畫出來**：直接讀 [arch-blueprint](https://github.com/cholateio/arch-blueprint) 產出的 SVG，分區、節點、連線依序畫出，講到哪一區就拉近到哪一區。
+- **分鏡寫錯會先告訴你**：旁白裡找不到觸發詞、字幕超過一行、場景開場空白太久，都會在渲染前報出來。
+
+目前只完成「分鏡檔 → 影片」這一段；從 repo 自動寫出分鏡的 skill 本體還在開發中。
+
+## How it works
+
+```
+分鏡檔 ──► 逐句配音 ──► 時間軸 ──► 合成 HTML ──► 渲染 mp4
+              └─► 每句的秒數與字詞時間，決定畫面元素何時出現
+```
+
+沒有伺服器也沒有資料庫；除了配音以外，全部在你的電腦上完成。
+
+## Install
+
+你需要 Node.js 22 以上，以及 ffmpeg。
+
+1. 下載這個 repo，進入 `skill` 資料夾。
+2. 執行 `npm install`。
+3. 執行 `npx hyperframes browser ensure`，取得渲染用的無頭 Chrome。
+4. 執行 `npm run demo`，示範片會出現在 `out/demo/demo.mp4`。
+
+要做自己的影片，複製 `examples/demo/storyboard.json` 來改，格式見 `references/storyboard-format.md`，
+然後執行 `node scripts/arch-video.mjs build <你的分鏡檔>`。
+
+## Privacy & security
+
+- 渲染、字型、圖示都在本機，不需要任何金鑰或帳號。
+- 旁白的文字會送到 Microsoft Edge 的朗讀服務合成語音；合成結果快取在 `skill/.cache/`，同一句不會重送。
+- HyperFrames 預設會回傳使用統計，這個專案的指令一律把它關閉，也不使用任何會上傳專案或影片的指令。
+
+## License
+
+[MIT](LICENSE). 渲染使用 [HyperFrames](https://github.com/heygen-com/hyperframes) 與 GSAP，圖示來自 [Phosphor Icons](https://phosphoricons.com)，字型是 JetBrains Mono 與 Noto Sans TC，配音經由 node-edge-tts。
