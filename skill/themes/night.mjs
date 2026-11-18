@@ -15,7 +15,7 @@ export default {
   // Warm glow top-left, cool glow bottom-right. Layered above the content so the ground and cards are tinted together.
   glow: 'radial-gradient(60% 60% at 10% 6%, rgba(222, 150, 80, 0.13), transparent 70%), radial-gradient(55% 65% at 94% 72%, rgba(84, 116, 210, 0.12), transparent 70%)',
   // Subtitles have no box, so a gradient at the bottom hides map content that extends behind them when zoomed in.
-  scrim: 'linear-gradient(to top, rgba(13, 14, 17, 0.94) 0%, rgba(13, 14, 17, 0.94) 50%, transparent 100%)',
+  scrim: 'linear-gradient(to top, rgba(13, 14, 17, 0.97) 0%, rgba(13, 14, 17, 0.97) 62%, transparent 100%)',
   sub: { size: 44, weight: 700, bg: 'transparent', fg: '#ffffff', shadow: '0 2px 14px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.9)' },
   font: {
     mono: '"JetBrains Mono", "Noto Sans TC", monospace',

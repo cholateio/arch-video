@@ -112,6 +112,8 @@ export default function map(scene, ctx) {
   ctx.from('g.zone', { opacity: 0, duration: 0.35, stagger: 0.1, ease: 'power2.out' }, t0 + 0.1)
   const tN = t0 + 0.3 + zones.length * 0.1
   nodes.forEach((n, i) => {
+    // The node rect has a fill, so keep the whole node hidden until its outline starts drawing.
+    ctx.from(S(n.id), { opacity: 0, duration: 0.12 }, tN + i * 0.07)
     ctx.to(`${S(n.id)} > rect`, { strokeDashoffset: 0, duration: 0.5, ease: 'power2.out' }, tN + i * 0.07)
     ctx.from(`${S(n.id)} > text, ${S(n.id)} > use`, { opacity: 0, duration: 0.3 }, tN + i * 0.07 + 0.25)
   })

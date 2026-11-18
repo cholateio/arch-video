@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "name": "arch-blueprint",
+    "title": "arch-blueprint 架構解說",
+    "voice": "zh-TW-HsiaoChenNeural",
+    "properNouns": [
+      "arch-blueprint",
+      "GitHub"
+    ]
+  },
+  "chapters": [
+    {
+      "id": "principle",
+      "label": "PRINCIPLE"
+    },
+    {
+      "id": "structure",
+      "label": "STRUCTURE"
+    },
+    {
+      "id": "workflow",
+      "label": "WORKFLOW"
+    },
+    {
+      "id": "rules",
+      "label": "RULES"
+    },
+    {
+      "id": "verify",
+      "label": "VERIFY"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "title",
+      "data": {
+        "kicker": "SKILL BREAKDOWN",
+        "title": "arch-blueprint",
+        "subtitle": {
+          "text": "把專案畫成一張黑白架構圖",
+          "at": "一個專案"
+        },
+        "tags": [
+          {
+            "text": "SVG",
+            "at": "兩個顏色"
+          },
+          {
+            "text": "2 COLORS",
+            "at": "兩個顏色"
+          },
+          {
+            "text": "OVERVIEW ONLY",
+            "at": "兩個顏色"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "arch-blueprint 是一個幫你畫架構圖的 skill。",
+          "say": "arch-blueprint 是一個幫你畫架構圖的技能。"
+        },
+        {
+          "text": "給它一個專案，它交出一張只有兩個顏色的 SVG。",
+          "say": "給它一個專案，它交出一張只有兩個顏色的向量圖。"
+        }
+      ]
+    },
+    {
+      "id": "rule-zones",
+      "type": "statement",
+      "chapter": "principle",
+      "transition": "wipe",
+      "data": {
+        "kicker": "CORE PRINCIPLE",
+        "segments": [
+          {
+            "text": "先分區，",
+            "at": "先分區"
+          },
+          {
+            "text": "再連線",
+            "at": "再連線",
+            "tone": "accent"
+          }
+        ],
+        "note": "RULE 01"
+      },
+      "lines": [
+        {
+          "text": "它的核心精神，第一句是：先分區，再連線。"
+        }
+      ]
+    },
+    {
+      "id": "rule-one-thing",
+      "type": "statement",
+      "chapter": "principle",
+      "transition": "push",
+      "data": {
+        "kicker": "CORE PRINCIPLE",
+        "segments": [
+          {
+            "text": "一張圖",
+            "at": "一張圖"
+          },
+          {
+            "text": "說一件事",
+            "at": "說一件事",
+            "tone": "accent",
+            "break": true
+          }
+        ],
+        "note": {
+          "text": "MAX 12 NODES · 12 EDGES",
+          "at": "十二個"
+        }
+      },
+      "lines": [
+        {
+          "text": "第二句是：一張圖說一件事。"
+        },
+        {
+          "text": "所以節點最多十二個，連線也最多十二條。"
+        }
+      ]
+    },
+    {
+      "id": "overview",
+      "type": "map",
+      "chapter": "structure",
+      "transition": "wipe",
+      "data": {
+        "svg": "overview.svg"
+      },
+      "lines": [
+        {
+          "text": "這是 arch-blueprint 自己的架構，也是照它的規則畫出來的。"
+        },
+        {
+          "text": "左邊是它帶的檔案，中間是助手要做的步驟，右邊負責檢查。"
+        }
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "flow",
+      "chapter": "workflow",
+      "transition": "wipe",
+      "data": {
+        "title": "從專案到一張圖",
+        "steps": [
+          {
+            "icon": "magnifying-glass",
+            "label": "分析專案",
+            "at": "分析專案"
+          },
+          {
+            "icon": "list-checks",
+            "label": "提案拆解",
+            "tone": "accent",
+            "at": "提案拆解"
+          },
+          {
+            "icon": "blueprint",
+            "label": "產出 SVG",
+            "at": "產出"
+          },
+          {
+            "icon": "shield-check",
+            "label": "自檢",
+            "tone": "accent2",
+            "at": "自檢"
+          }
+        ],
+        "note": {
+          "text": "第二步要等你確認，才會往下走",
+          "at": "確認"
+        }
+      },
+      "lines": [
+        {
+          "text": "主要的流程有四步。"
+        },
+        {
+          "text": "分析專案、提案拆解、產出 SVG，最後自檢。",
+          "say": "分析專案、提案拆解、產出向量圖，最後自檢。"
+        },
+        {
+          "text": "其中第二步，要等你確認才會往下走。"
+        }
+      ]
+    },
+    {
+      "id": "prune",
+      "type": "file",
+      "chapter": "workflow",
+      "transition": "push",
+      "data": {
+        "path": "arch-blueprint/SKILL.md",
+        "lines": [
+          "2. 提案拆解：用文字列出打算畫的「分區 × 節點 × 主要資料流」清單…",
+          "   確認。列完先做一輪刪減測試，再送出：",
+          "   - 哪個節點拿掉後讀者仍看得懂？拿掉。",
+          "   - 哪兩個節點總是一起出現？合併。",
+          "   - 哪條箭頭從排版（上游在上、下游在下）就看得出來？拿掉。",
+          "   - 哪條線是次要關係（驗證、監控、設定）？降為虛線或省略。",
+          "   粒度不對就調整，確認後才開始畫。"
+        ],
+        "highlights": [
+          {
+            "from": 3,
+            "to": 4,
+            "at": "拿掉也",
+            "note": "先刪節點"
+          },
+          {
+            "from": 5,
+            "to": 6,
+            "at": "箭頭",
+            "note": "再刪線"
+          },
+          {
+            "from": 7,
+            "at": "確認",
+            "note": "你點頭才畫"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "提案之前，它會先做一輪刪減測試。"
+        },
+        {
+          "text": "拿掉也看得懂的節點就拿掉，總是一起出現的就合併。"
+        },
+        {
+          "text": "從排版就看得出來的箭頭，也拿掉。"
+        },
+        {
+          "text": "刪完給你確認，你點頭它才開始畫。"
+        }
+      ]
+    },
+    {
+      "id": "icon-library",
+      "type": "map",
+      "chapter": "workflow",
+      "transition": "zoom",
+      "data": {
+        "svg": "overview.svg",
+        "focus": [
+          {
+            "zone": "zone-skill",
+            "at": "圖示庫"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "畫圖的時候，圖示只能從圖示庫原樣複製，不能自己畫。"
+        }
+      ]
+    },
+    {
+      "id": "two-colors",
+      "type": "statement",
+      "chapter": "rules",
+      "transition": "wipe",
+      "data": {
+        "kicker": "STYLE",
+        "segments": [
+          {
+            "text": "只有",
+            "at": "只有"
+          },
+          {
+            "text": "兩個顏色",
+            "at": "兩個顏色",
+            "tone": "accent"
+          }
+        ],
+        "note": {
+          "text": "#FAF8F4 · #1A1A1A",
+          "at": "米白"
+        }
+      },
+      "lines": [
+        {
+          "text": "風格規則很嚴格：整張圖只有兩個顏色。"
+        },
+        {
+          "text": "米白的底，墨黑的線，沒有漸層也沒有陰影。"
+        }
+      ]
+    },
+    {
+      "id": "edges",
+      "type": "file",
+      "chapter": "rules",
+      "transition": "push",
+      "data": {
+        "path": "arch-blueprint/SKILL.md",
+        "lines": [
+          "連線（每條加 class=\"edge\"）",
+          "- 只能水平或垂直，轉彎一律是尖角直角…",
+          "  絕不可穿過任何節點或文字。起點貼在節點邊緣…",
+          "- 平行線錯開 ≥ 12px，不可重疊共用線段。"
+        ],
+        "highlights": [
+          {
+            "from": 2,
+            "at": "水平",
+            "note": "只走橫線和直線"
+          },
+          {
+            "from": 3,
+            "at": "穿過",
+            "note": "不穿過節點"
+          },
+          {
+            "from": 4,
+            "at": "平行",
+            "note": "平行線要錯開"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "連線也有規定：只能走水平或垂直，轉彎一定是直角。"
+        },
+        {
+          "text": "線不能穿過任何節點或文字。"
+        },
+        {
+          "text": "平行的線還要彼此錯開。"
+        }
+      ]
+    },
+    {
+      "id": "checker",
+      "type": "file",
+      "chapter": "verify",
+      "transition": "wipe",
+      "data": {
+        "path": "arch-blueprint/scripts/check.py",
+        "lines": [
+          "\"\"\"arch-blueprint 架構圖自檢（純標準函式庫，不需安裝任何套件）。",
+          "",
+          "把 SKILL.md 裡能量化的規則全部跑一遍：",
+          "",
+          "  顏色   只有米白 #faf8f4 與墨黑 #1a1a1a；禁止漸層、濾鏡、陰影…",
+          "  數量   節點 ≤ 12、連線 ≤ 12、資料流標籤 ≤ 6",
+          "  連線   只能水平／垂直（直角轉彎；跳線用小圓弧 A）、不穿過節點…",
+          "",
+          "錯誤（E）會讓結束碼變 1；警告（W）只提示。"
+        ],
+        "highlights": [
+          {
+            "from": 1,
+            "at": "不需要",
+            "note": "不用裝套件"
+          },
+          {
+            "from": 5,
+            "to": 7,
+            "at": "顏色",
+            "note": "規則寫成程式"
+          },
+          {
+            "from": 9,
+            "at": "錯誤",
+            "note": "有錯就不能交付"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "能量化的規則，它都寫進了一支檢查腳本。"
+        },
+        {
+          "text": "它不需要安裝任何套件。"
+        },
+        {
+          "text": "顏色、數量、連線，每一條規則都會被檢查。"
+        },
+        {
+          "text": "只要有一個錯誤，就要修到沒有才能交付。"
+        }
+      ]
+    },
+    {
+      "id": "loop",
+      "type": "flow",
+      "chapter": "verify",
+      "transition": "push",
+      "data": {
+        "title": "畫完不是結束",
+        "steps": [
+          {
+            "icon": "pencil-ruler",
+            "label": "畫出草稿",
+            "at": "草稿"
+          },
+          {
+            "icon": "shield-check",
+            "label": "腳本檢查",
+            "tone": "accent2",
+            "at": "腳本檢查"
+          },
+          {
+            "icon": "wrench",
+            "label": "修正錯誤",
+            "tone": "accent",
+            "at": "有錯"
+          },
+          {
+            "icon": "eye",
+            "label": "實際看圖",
+            "at": "打開圖"
+          }
+        ],
+        "note": {
+          "text": "零錯誤，而且親眼看過",
+          "at": "用眼睛"
+        }
+      },
+      "lines": [
+        {
+          "text": "所以畫完不是結束。"
+        },
+        {
+          "text": "草稿先給腳本檢查，有錯就修，再檢查一次。"
+        },
+        {
+          "text": "最後還要實際打開圖，用眼睛看過。"
+        }
+      ]
+    },
+    {
+      "id": "takeaway",
+      "type": "statement",
+      "transition": "wipe",
+      "data": {
+        "kicker": "TAKEAWAY",
+        "segments": [
+          {
+            "text": "風格服務於閱讀，",
+            "at": "風格"
+          },
+          {
+            "text": "不是裝飾",
+            "at": "不是裝飾",
+            "tone": "accent",
+            "break": true
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "這些規則都指向同一件事：風格服務於閱讀，不是裝飾。"
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "type": "title",
+      "transition": "push",
+      "data": {
+        "kicker": "TRY IT",
+        "title": "arch-blueprint",
+        "subtitle": {
+          "text": "github.com/cholateio/arch-blueprint",
+          "at": "GitHub"
+        }
+      },
+      "lines": [
+        {
+          "text": "arch-blueprint 公開在 GitHub 上，可以裝進你自己的工具。"
+        }
+      ]
+    }
+  ]
+}

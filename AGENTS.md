@@ -23,7 +23,8 @@
   - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式
   - `skill/references/` — 寫腳本與分鏡的規則：`script-rules.md`、`storyboard-format.md`
-  - `skill/examples/demo/` — 示範分鏡與它用到的藍圖
+  - `skill/examples/demo/` — 示範分鏡與它用到的藍圖（跑測試與調整版面用）
+  - `skill/examples/arch-blueprint/` — 第一支正式影片的分鏡與架構圖
   - `skill/tests/` — 單元測試（不連網、不渲染）
 - `docs/specs/` — 需求與設計決定，是「要做什麼」的依據
 - `docs/DEVELOPMENT.md` — 指令、注意事項
