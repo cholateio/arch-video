@@ -27,6 +27,27 @@ export function balanceWarnings(board) {
   return [`佐證類場景（file、terminal、tree）有 ${evidence} 個，超過 ${board.scenes.length} 個場景的三分之一：影片會變成程式碼導讀，請改用架構圖、流程或對比來講，只留必要的範例`]
 }
 
+// Words that mark a sentence as giving a reason or a consequence. A script that only reports what exists has almost none.
+const REASON = /因為|所以|為了|否則|不然|這樣一來|代價是|才不會|才能|免得|以免|於是|因此|換來|好處是|壞處是|要是|導致|造成|使得|結果是|結果就|就會|由於|既然/
+const MIN_REASON_SHARE = 0.15
+
+// A video that only lists flows and settings teaches nothing: check that the narration explains why.
+export function reasonWarnings(board) {
+  const out = []
+  const said = (l) => l.say ?? l.text ?? ''
+  const lines = board.scenes.flatMap((s) => s.lines ?? [])
+  const reasons = lines.filter((l) => REASON.test(said(l))).length
+  if (lines.length >= 20 && reasons < lines.length * MIN_REASON_SHARE) {
+    out.push(`旁白 ${lines.length} 句裡只有 ${reasons} 句帶有講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）：影片會變成流程與設定的報告。請照 script-rules.md 的「決定怎麼講」，補上為什麼這樣選、不這樣會怎樣`)
+  }
+  for (const s of board.scenes) {
+    if (s.type === 'stat' && !(s.lines ?? []).some((l) => REASON.test(said(l)))) {
+      out.push(`場景 ${s.id}：旁白裡找不到講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）。每個上畫面的數字都要說它為什麼是這個值、或它造成什麼結果；講不出來就不要放`)
+    }
+  }
+  return out
+}
+
 export async function build(file, flags) {
   const stillsOnly = flags.includes('--stills-only')
   // A preview never contacts the speech service unless asked to: a script is reviewed before its narration is sent anywhere.
@@ -79,6 +100,7 @@ export async function build(file, flags) {
   }
 
   balanceWarnings(board).forEach(warn)
+  reasonWarnings(board).forEach(warn)
 
   // Narration rule: only proper nouns stay in English. Other English words need a Chinese reading in `say`; the subtitle `text` may keep the original.
   const proper = board.meta?.properNouns ?? []

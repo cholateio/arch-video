@@ -96,6 +96,14 @@ test('開場太久沒有東西會警告；不重畫的架構圖一開始就在�
   assert.match(run(list).warnings.join('\n'), /畫面才有東西/)
 })
 
+test('數字場景有標題時，標題一開場就在，數字晚到也不算空畫面', () => {
+  const board = (title) => ({ scenes: [{ id: 'n', type: 'stat', data: { title, items: [{ value: '10', label: '上限', at: { line: 0, offset: 3 } }] }, lines: [{ text: '一二三四五六七八九十一二三四五六七八九十' }] }] })
+  assert.match(run(board()).warnings.join('\n'), /畫面才有東西/)
+  const withTitle = run(board('為什麼要有上限'))
+  assert.deepEqual(withTitle.warnings, [])
+  assert.match(withTitle.html, /為什麼要有上限/)
+})
+
 test('對比的右邊卡片在講到它的那一句開始之前出現', () => {
   const board = {
     scenes: [{
