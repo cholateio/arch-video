@@ -28,6 +28,14 @@ export function balanceWarnings(board) {
   return [`佐證類場景（file、terminal、tree）有 ${evidence} 個，超過 ${board.scenes.length} 個場景的三分之一：影片會變成程式碼導讀，請改用架構圖、流程或對比來講，只留必要的範例`]
 }
 
+// English words a line would speak, once the proper nouns are taken out. Longer names go first, so "GitHub Actions"
+// is removed whole before "GitHub" can leave "Actions" behind.
+export function englishWords(text, proper = []) {
+  let rest = text
+  for (const p of [...proper].sort((a, b) => b.length - a.length)) rest = rest.replaceAll(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
+  return (rest.match(/[A-Za-z][A-Za-z0-9_.\-/]*/g) ?? []).map((w) => w.replace(/[.\-/]+$/, ''))
+}
+
 // Scenes that only arrange words and numbers. A video made mostly of them is a slide deck read aloud.
 const TEXT_SCENES = ['statement', 'compare', 'list', 'stat']
 const MAX_TEXT_SHARE = 0.4
@@ -136,10 +144,8 @@ export async function build(file, flags) {
   const proper = board.meta?.properNouns ?? []
   for (const s of board.scenes) {
     for (const [j, line] of (s.lines ?? []).entries()) {
-      let rest = line.say ?? line.text
-      for (const p of proper) rest = rest.replaceAll(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
       // Long tokens are masked: a credential the scan missed must not be echoed into the log by this warning.
-      const english = (rest.match(/[A-Za-z][A-Za-z0-9_.\-/]*/g) ?? []).map((w) => w.replace(/[.\-/]+$/, '')).map((w) => (w.length > 20 ? mask(w) : w))
+      const english = englishWords(line.say ?? line.text, proper).map((w) => (w.length > 20 ? mask(w) : w))
       if (english.length) warn(`場景 ${s.id} 第 ${j + 1} 句會唸出英文詞「${english.join('、')}」：不是專有名詞就在 say 改成中文說法，是專有名詞就加進 meta.properNouns`)
     }
   }

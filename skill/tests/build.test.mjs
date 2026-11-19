@@ -1,7 +1,7 @@
 // Storyboard-level checks that need no narration or rendering.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { balanceWarnings, pictureWarnings, reasonWarnings, voiceProblem } from '../lib/build.mjs'
+import { balanceWarnings, englishWords, pictureWarnings, reasonWarnings, voiceProblem } from '../lib/build.mjs'
 
 const board = (...types) => ({ scenes: types.map((type, i) => ({ id: `s${i}`, type })) })
 
@@ -55,4 +55,10 @@ test('純文字的場景超過四成、或連續三個以上會警告；只放�
   const run = ['map', 'statement', 'compare', 'map', 'map', 'flow', 'map', 'flow', 'title'].map(s)
   run.splice(3, 0, words)
   assert.match(pictureWarnings({ scenes: run }).join('\n'), /連續 3 個純文字的場景（s1、s2、w）/)
+})
+
+test('專有名詞不論列出的順序，較長的名稱都會整個被認出來', () => {
+  assert.deepEqual(englishWords('跑在 GitHub Actions 上，用 cron 觸發。', ['GitHub', 'GitHub Actions']), ['cron'])
+  assert.deepEqual(englishWords('跑在 GitHub Actions 上。', ['GitHub Actions', 'GitHub']), [])
+  assert.deepEqual(englishWords('讀 docs/README.md。', []), ['docs/README.md'])
 })

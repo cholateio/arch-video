@@ -12,7 +12,7 @@ export default function cycle(scene, ctx) {
   const steps = d.steps ?? []
   const n = steps.length
   if (n < 3 || n > 5) throw new Error(`場景 ${scene.id}：循環要 3 到 5 步，現在是 ${n} 步`)
-  const note = norm(d.note)
+  const note = norm(d.note) // with four steps one sits at the very bottom, so the note drops below its label
   const center = norm(d.center)
   const { width: W } = ctx.theme.stage
   const D = 130
@@ -52,7 +52,7 @@ export default function cycle(scene, ctx) {
   <svg class="arcs" viewBox="0 0 ${W} ${ctx.theme.stage.height}">${arcs.join('\n    ')}</svg>
   ${discs.join('\n  ')}
   ${center ? `<div class="center" style="left:${cx - 150}px;top:${cy - 60}px">${esc(center.text)}</div>` : ''}
-  ${note ? `<div class="pill"><span>${esc(note.text)}</span></div>` : ''}
+  ${note ? `<div class="pill"${n === 4 ? ' style="bottom:0"' : ''}><span>${esc(note.text)}</span></div>` : ''}
 </div>`
 
   const times = []
