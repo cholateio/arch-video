@@ -10,7 +10,7 @@ import { check } from '../lib/check.mjs'
 import { status, stamp } from '../lib/status.mjs'
 import { fingerprint, isCredential } from '../lib/repo.mjs'
 
-const git = (dir, ...args) => execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', ...args], { encoding: 'utf8' }).trim()
+const git = (dir, ...args) => execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=noreply@example.com', ...args], { encoding: 'utf8' }).trim()
 const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text) }
 
 const LESSONS = '# Lessons\n\n翻譯連續十二天沒有成功，執行紀錄卻全部是綠的。\n'
