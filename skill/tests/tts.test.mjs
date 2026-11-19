@@ -68,3 +68,44 @@ test('離線模式不呼叫配音服務；之前配過音的句子仍用快取',
   assert.equal(calls, 1)
   assert.equal(hit.cached, true)
 })
+
+test('配音服務回 429 時會等一下再試，等過三次還是不行才算失敗', async () => {
+  resetBreaker()
+  const waits = []
+  const sleep = async (ms) => { waits.push(ms) }
+  let calls = 0
+  const flaky = async () => { calls++; if (calls <= 2) throw new Error('Unexpected server response: 429'); return [{ part: '好', start: 0, end: 500 }] }
+  const ok = await synth('等一下就好。', { voice: 'v', cacheDir: tmp(), engine: flaky, measure: () => 1, sleep })
+  assert.equal(ok.estimated, false)
+  assert.deepEqual(waits, [15000, 30000])
+
+  waits.length = 0
+  calls = 0
+  const always = async () => { calls++; throw new Error('Unexpected server response: 429') }
+  const bad = await synth('一直被擋。', { voice: 'v', cacheDir: tmp(), engine: always, sleep })
+  assert.equal(bad.estimated, true)
+  assert.match(bad.error, /429/)
+  assert.deepEqual(waits, [15000, 30000, 60000])
+  assert.equal(calls, 4)
+})
+
+test('不是 429 的錯誤不等待，照原本的次數重試', async () => {
+  resetBreaker()
+  const waits = []
+  let calls = 0
+  const engine = async () => { calls++; throw new Error('Timed out') }
+  await synth('連不上。', { voice: 'v', cacheDir: tmp(), engine, sleep: async (ms) => { waits.push(ms) } })
+  assert.deepEqual(waits, [])
+  assert.equal(calls, 2)
+})
+
+test('backoff 給空陣列時遇到 429 不等待（體檢用）', async () => {
+  resetBreaker()
+  const waits = []
+  let calls = 0
+  const engine = async () => { calls++; throw new Error('Unexpected server response: 429') }
+  const r = await synth('測試。', { voice: 'v', cacheDir: tmp(), engine, backoff: [], sleep: async (ms) => { waits.push(ms) } })
+  assert.equal(r.estimated, true)
+  assert.deepEqual(waits, [])
+  assert.equal(calls, 1)
+})

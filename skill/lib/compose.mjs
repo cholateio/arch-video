@@ -76,12 +76,15 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
       from: (sel, vars, t) => anims.push(['from', scope(sel), vars, check(t, sel)]),
       init: (sel, vars) => inits.push([scope(sel), vars]),
       fromTo: (sel, a, b, t) => anims.push(['fromTo', scope(sel), a, b, check(t, sel)]),
+      // A component calls this when its picture is complete from the first frame (a diagram shown without drawing in).
+      present: () => { present = true },
     }
+    let present = false
     const before = anims.length
     const inner = render(s, ctx)
     // A scene must not open on an empty frame: the first element has to appear within 1.5s.
     const first = Math.min(...anims.slice(before).map((a) => a.at(-1)))
-    if (first - ts.contentStart > 1.5) warn(`場景 ${s.id}：開場後 ${round(first - ts.contentStart)} 秒畫面才有東西，請讓第一個元素早點出現`)
+    if (!present && first - ts.contentStart > 1.5) warn(`場景 ${s.id}：開場後 ${round(first - ts.contentStart)} 秒畫面才有東西，請讓第一個元素早點出現`)
     // The picture leads the voice: nothing may make its entrance after the narration of the scene is over.
     const last = ts.lines.at(-1)
     if (last) {

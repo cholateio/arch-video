@@ -44,10 +44,11 @@ export async function collect({ env = process.env, checkTts = true } = {}) {
     const { synth, resetBreaker } = await import('./tts.mjs')
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-doctor-')) // fresh cache dir so the request really goes out
     resetBreaker()
-    const r = await synth('配音連線測試', { voice: 'zh-TW-HsiaoChenNeural', cacheDir: tmp })
+    const r = await synth('配音連線測試', { voice: 'zh-TW-HsiaoChenNeural', cacheDir: tmp, backoff: [] })
     fs.rmSync(tmp, { recursive: true, force: true })
     resetBreaker()
     if (!r.estimated) add('ok', '配音連線', '連得上 Microsoft Edge 朗讀服務')
+    else if (/\b429\b/.test(r.error)) add('note', '配音連線', '連得上，但服務要求放慢（短時間內配了太多句）', '過幾分鐘再配音；渲染時遇到會自動等待再試')
     else add('note', '配音連線', `連不上（${r.error}）。影片仍可產出，但沒有聲音、只有字幕`, '受限的網路請設定環境變數 HTTPS_PROXY，或換一個網路')
   } else if (checkTts) {
     add('note', '配音連線', '上面缺的項目補齊後才能檢查')

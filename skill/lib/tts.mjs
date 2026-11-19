@@ -36,11 +36,16 @@ async function edge(text, { voice, rate, proxy }, mp3) {
 // consecutive failed lines the service is treated as down and the rest of this run goes straight to the estimate.
 const ATTEMPTS = 2
 const BREAK_AFTER = 2
+// The service answers 429 when lines arrive too fast for too long. Waiting clears it; retrying at once does not.
+const RATE_WAITS = [15, 30, 60]
+const rateLimited = (e) => /\b429\b|too many requests/i.test(String(e?.message ?? e))
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 let failedInARow = 0
 export const resetBreaker = () => { failedInARow = 0 }
 
+// backoff: seconds to wait after each rate-limit answer; pass [] for a quick check that must not sit waiting.
 // offline: never contact the speech service. Lines voiced earlier come from the cache; the rest get estimated timing.
-export async function synth(text, { voice, rate = 'default', cacheDir, engine = edge, measure = probe, offline = false }) {
+export async function synth(text, { voice, rate = 'default', cacheDir, engine = edge, measure = probe, offline = false, sleep = pause, onWait, backoff = RATE_WAITS }) {
   fs.mkdirSync(cacheDir, { recursive: true })
   const key = hash(voice, rate, text)
   const mp3 = path.join(cacheDir, `${key}.mp3`)
@@ -51,7 +56,9 @@ export async function synth(text, { voice, rate = 'default', cacheDir, engine = 
 
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || undefined
   let lastError
-  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+  let attempts = 0
+  let waits = 0
+  while (attempts < ATTEMPTS) {
     try {
       const words = await engine(text, { voice, rate, proxy }, mp3)
       const out = { duration: measure(mp3), words, estimated: false }
@@ -62,6 +69,12 @@ export async function synth(text, { voice, rate = 'default', cacheDir, engine = 
       lastError = e
       fs.rmSync(mp3, { force: true })
       fs.rmSync(`${mp3}.json`, { force: true })
+      if (!rateLimited(e)) attempts++
+      else if (waits >= backoff.length) break
+      else {
+        onWait?.(backoff[waits])
+        await sleep(backoff[waits++] * 1000)
+      }
     }
   }
   failedInARow++

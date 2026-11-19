@@ -12,6 +12,15 @@ import { scanBoard, mask } from './secrets.mjs'
 
 // The video is driven by the need and the architecture diagram; raw excerpts are only evidence.
 // Short boards (component demos, clips) are exempt.
+// What to do about lines that got no voice. None voiced: the service is unreachable and nothing in the storyboard can fix it,
+// so the run goes on as a subtitle-only video. Some voiced: stop before rendering, because a half-silent video is not a result
+// and the voiced lines are cached, so running again only fills the gaps.
+export function voiceProblem(total, silent) {
+  if (!silent.length) return null
+  if (silent.length === total) return { fatal: false, message: `配音服務連不上（${silent[0].error}）：${silent.length} 句全部沒有聲音，成品會是純字幕版` }
+  return { fatal: true, message: `有 ${silent.length} 句配音失敗（${silent[0].error}），已停止，沒有渲染。配好的句子留在快取；過幾分鐘再執行同一個指令，只會補配缺的句子。失敗的句子：${silent.map((x) => x.where).join('、')}` }
+}
+
 export function balanceWarnings(board) {
   const evidence = board.scenes.filter((s) => ['file', 'terminal', 'tree'].includes(s.type)).length
   if (board.scenes.length < 6 || evidence * 3 <= board.scenes.length) return []
@@ -89,7 +98,7 @@ export async function build(file, flags) {
   const silent = []
   for (const s of board.scenes) {
     for (const [j, line] of (s.lines ?? []).entries()) {
-      const r = await synth(line.say ?? line.text, { voice, rate: board.meta?.rate, cacheDir: path.join(ROOT, '.cache', 'tts'), offline })
+      const r = await synth(line.say ?? line.text, { voice, rate: board.meta?.rate, cacheDir: path.join(ROOT, '.cache', 'tts'), offline, onWait: (sec) => console.log(`  配音服務要求放慢，等 ${sec} 秒再試`) })
       if (r.estimated && !r.offline) silent.push({ where: `${s.id} 第 ${j + 1} 句`, error: r.error })
       if (!r.cached && !r.estimated) fresh++
       spoken.set(`${s.id}:${j}`, r)
@@ -98,9 +107,9 @@ export async function build(file, flags) {
   const estimated = [...spoken.values()].filter((r) => r.offline).length
   if (offline) console.log(`  ${spoken.size} 句：${estimated} 句用字數估算時間、${spoken.size - estimated} 句用之前配過音的快取。長度是估計值，渲染時才會配音`)
   else console.log(`  ${spoken.size} 句：${fresh} 句新合成、${spoken.size - fresh - silent.length} 句來自快取、${silent.length} 句失敗`)
-  // One warning for the whole run rather than one per line: nothing in the storyboard can fix a connection problem.
-  if (silent.length === spoken.size && silent.length) warn(`配音服務連不上（${silent[0].error}）：${silent.length} 句全部沒有聲音，成品會是純字幕版`)
-  else if (silent.length) warn(`有 ${silent.length} 句配音失敗、沒有聲音，時間改用估算：${silent.map((x) => x.where).join('、')}（${silent[0].error}）`)
+  const problem = voiceProblem(spoken.size, silent)
+  if (problem?.fatal) fail(problem.message)
+  if (problem) warn(problem.message)
 
   step('時間軸與合成')
   const tl = buildTimeline(board, spoken)
@@ -131,7 +140,8 @@ export async function build(file, flags) {
   const times = tl.scenes.map((s) => (s.lines.length ? s.lines.at(-1).end + 0.15 : s.end - 0.3).toFixed(2))
   const snap = hf(['snapshot', '--at', times.join(','), '--no-end', '-o', stillsDir], buildDir)
   if (!snap.ok) fail(snap.out)
-  fs.rmSync(path.join(stillsDir, 'contact-sheet.jpg'), { force: true }) // HyperFrames writes its own sheet; ours below is named by scene
+  // HyperFrames writes its own sheet (numbered when there are many frames); ours below is named by scene.
+  for (const f of fs.readdirSync(stillsDir)) if (/^contact-sheet.*\.jpg$/.test(f)) fs.rmSync(path.join(stillsDir, f), { force: true })
   const pngs = fs.readdirSync(stillsDir).filter((f) => f.endsWith('.png')).sort((a, b) => parseFloat(a.replace(/[^0-9.]/g, '')) - parseFloat(b.replace(/[^0-9.]/g, '')))
   tl.scenes.forEach((s, i) => { if (pngs[i]) fs.renameSync(path.join(stillsDir, pngs[i]), path.join(stillsDir, `${String(i + 1).padStart(2, '0')}-${s.id}.png`)) })
   const cols = Math.min(3, tl.scenes.length)

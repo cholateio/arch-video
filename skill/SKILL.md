@@ -24,6 +24,7 @@ description: Use when asked to turn a software project, repo, skill or MCP serve
 
 **工作資料夾**：大綱、分鏡、預覽都放在這裡。使用者有指定就照指定；沒指定就用主要程式碼所在 repo 的 `docs/video/`，
 沒有 repo 就用目前資料夾下的 `video/`。下面用 `<work>` 代表它。
+素材跨好幾個 repo，或使用者要求不要動專案時，用目前資料夾下的 `video/<名稱>/`，架構圖也存在那裡。
 
 ## 工作流程（依序執行；只在步驟 3 和步驟 8 停下來等使用者）
 
@@ -35,6 +36,7 @@ node <skill>/scripts/arch-video.mjs doctor
 
 - 有「缺」：照它列的方法補。要安裝或下載東西之前，先用一句話告訴使用者要裝什麼，再執行。
   相依套件用 `npm install`（在 `<skill>` 裡執行）。
+- 體檢會向配音服務送一句固定的測試文字來確認連線，內容和專案無關。
 - 只有「注意」：可以繼續。體檢顯示配音連不上時，成品會是沒有聲音的純字幕版，要在步驟 8 告訴使用者。
 
 ### 1. 清點素材、確定範圍
@@ -75,7 +77,8 @@ node <skill>/scripts/arch-video.mjs doctor
 
 ### 4. 畫架構圖
 
-- 用 **arch-blueprint** skill 依程式碼畫，存到主要 repo 的 `docs/architecture/overview.svg`（沒有 repo 就存到 `<work>`）。
+- 用 **arch-blueprint** skill 依程式碼畫，存到主要 repo 的 `docs/architecture/overview.svg`。
+  沒有 repo、素材跨好幾個 repo，或使用者要求不要動專案時，存到 `<work>/overview.svg`。
   - **技術文件裡已經有架構圖也要重畫**，文件的圖只參考分層方式和分區名稱。
   - arch-blueprint 規定「畫之前先給使用者確認拆解」。使用者在審核點一確認過的拆解就是這個確認，
     照它畫，不要再問一次。畫完跑它的檢查腳本。
@@ -116,7 +119,7 @@ node <skill>/scripts/arch-video.mjs doctor
 照 `<skill>/references/storyboard-format.md` 的格式，寫到 `<work>/storyboard.json`。
 範例見 `<skill>/examples/demo/storyboard.json`。
 
-- `map` 場景的 `svg` 路徑相對於分鏡檔，通常是 `../architecture/overview.svg`。
+- `map` 場景的 `svg` 路徑相對於分鏡檔，通常是 `../architecture/overview.svg`；架構圖存在 `<work>` 時就是 `overview.svg`。
 - 專有名詞列在 `meta.properNouns`；其他英文詞在 `say` 改成中文說法。
 - 寫完後拿大綱的「排除清單」逐項對照旁白和畫面上的文字，確認沒有任何一項混進去。
 
@@ -168,7 +171,8 @@ node <skill>/scripts/arch-video.mjs build <work>/storyboard.json --out <work>/ou
 
 - 實際配音的時間和估算不同，可能出現預覽時沒有的警告（例如元素比旁白晚出現）。調整觸發點後重跑；
   只改觸發點和時間不用再回審核點二，改到旁白或畫面內容才要。
-- 只有少數幾句配音失敗（例如服務暫時拒絕）：直接重跑一次，已經配好的句子會用快取。
+- 配音只成功一部分（例如句數多、服務要求放慢）：指令會停下來、不渲染。過幾分鐘執行同一個指令，
+  已經配好的句子會用快取，只補配缺的。
 - 「配音服務連不上」的警告不是分鏡的問題，改分鏡消不掉。成品會是純字幕版，在步驟 10 告訴使用者。
 
 ### 10. 交付

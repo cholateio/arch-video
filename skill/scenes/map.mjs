@@ -76,6 +76,7 @@ export default function map(scene, ctx) {
   const labels = $('g.label').toArray().map((el) => ({ id: $(el).attr('id'), edge: $(el).attr('data-edge') }))
 
   const animate = d.draw !== false
+  if (!animate) ctx.present()
   for (const f of d.focus ?? []) {
     for (const key of ['trace', 'nodes']) {
       if (f[key] != null && !Array.isArray(f[key])) throw new Error(`場景 ${scene.id}：focus 的 ${key} 要寫成陣列，例如 ["${f[key]}"]`)
@@ -144,7 +145,7 @@ export default function map(scene, ctx) {
   if (showTitle) { box.h += box.y - 40; box.y = 40 }
   const full = fit(box, 16)
   svg.attr('viewBox', full).attr('preserveAspectRatio', 'xMidYMid meet')
-  const html = `<div class="map" style="left:${stage.x}px;top:${stage.y}px;width:${stage.width}px;height:${stage.height}px">${$.xml(svg)}</div>`
+  const html = `<div class="map" style="left:${stage.x}px;top:${stage.y}px;width:${stage.width}px;height:${stage.height}px">${$.xml(svg)}</div><div class="map-fade"></div>`
 
   const S = (id) => `#${P}${id}`
   const t0 = ctx.t(d.at)
@@ -226,7 +227,8 @@ export default function map(scene, ctx) {
       } else if (wasTraced.has(e.id)) {
         ctx.to(S(e.id), { stroke: ink, duration: 0.3 }, f.t)
       }
-      labels.filter((l) => l.edge === e.id).forEach((l) => ctx.to(S(l.id), { opacity: level(on), duration: 0.5 }, f.t))
+      // Dim only the text: the label's backing rect stays opaque so the lines under it never show through.
+      labels.filter((l) => l.edge === e.id).forEach((l) => ctx.to(`${S(l.id)} text`, { opacity: level(on), duration: 0.5 }, f.t))
     })
     if (showTitle && heading.length) ctx.to('.heading', { opacity: level(reset), duration: 0.5 }, f.t)
     if (z && z !== litZone) {
