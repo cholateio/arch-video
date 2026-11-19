@@ -39,12 +39,14 @@ const BREAK_AFTER = 2
 let failedInARow = 0
 export const resetBreaker = () => { failedInARow = 0 }
 
-export async function synth(text, { voice, rate = 'default', cacheDir, engine = edge, measure = probe }) {
+// offline: never contact the speech service. Lines voiced earlier come from the cache; the rest get estimated timing.
+export async function synth(text, { voice, rate = 'default', cacheDir, engine = edge, measure = probe, offline = false }) {
   fs.mkdirSync(cacheDir, { recursive: true })
   const key = hash(voice, rate, text)
   const mp3 = path.join(cacheDir, `${key}.mp3`)
   const meta = path.join(cacheDir, `${key}.json`)
   if (fs.existsSync(mp3) && fs.existsSync(meta)) return { ...JSON.parse(fs.readFileSync(meta, 'utf8')), file: mp3, cached: true }
+  if (offline) return { ...estimate(text), estimated: true, file: null, offline: true }
   if (failedInARow >= BREAK_AFTER) return { ...estimate(text), estimated: true, file: null, error: '配音服務連不上，已略過' }
 
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || undefined

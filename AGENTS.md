@@ -17,12 +17,12 @@
 ## File layout
 
 - `skill/` — skill 本體，可整個資料夾複製後 `npm install` 使用
-  - `skill/SKILL.md` — 給 Claude 的工作流程：體檢、分析、寫腳本與分鏡、預覽、審核點、渲染、交付
+  - `skill/SKILL.md` — 給 Claude 的工作流程：體檢、整理素材、審核點一、畫架構圖、寫腳本與分鏡、預覽、審核點二、渲染、交付
   - `skill/scripts/arch-video.mjs` — 指令進入點：`doctor`、`build <分鏡檔>`
-  - `skill/lib/` — `doctor`（體檢）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`icons`、`util`
+  - `skill/lib/` — `doctor`（體檢）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`secrets`（機密掃描）、`icons`、`util`
   - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`、`chat`、`compare`、`list`、`stat`、`tree`、`cycle`、`terminal`
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式
-  - `skill/references/` — 寫腳本與分鏡的規則：`script-rules.md`、`storyboard-format.md`
+  - `skill/references/` — 整理素材、寫腳本與分鏡的規則：`source-rules.md`、`script-rules.md`、`storyboard-format.md`
   - `skill/examples/demo/` — 示範分鏡與它用到的藍圖（跑測試與調整版面用）
   - `skill/examples/arch-blueprint/` — 第一支正式影片的分鏡與架構圖
   - `skill/tests/` — 單元測試（不連網、不渲染）
@@ -57,5 +57,6 @@
 
 - `docs/specs/` — requirements and design decisions
 - `docs/DEVELOPMENT.md` — restart, commands, environment variables, gotchas
+- `skill/references/source-rules.md` — 整理素材的規則：以誰為準、什麼算已實裝、機密、內容大綱的格式
 - `skill/references/script-rules.md` — 旁白與分鏡的規則
 - `skill/references/storyboard-format.md` — 分鏡檔格式與各場景元件的欄位

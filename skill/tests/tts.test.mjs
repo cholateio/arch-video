@@ -51,3 +51,20 @@ test('估算時間時，英文詞與全形字都算進去，標點只算停頓',
   assert.deepEqual(r.words.map((w) => w.part), ['這', '個', 'skill', '很', '好。'])
   assert.ok(r.duration > 1)
 })
+
+test('離線模式不呼叫配音服務；之前配過音的句子仍用快取', async () => {
+  resetBreaker()
+  const cacheDir = tmp()
+  let calls = 0
+  const engine = async (text, opts, mp3) => { calls++; fs.writeFileSync(mp3, 'x'); return [{ part: text, start: 0, end: 500 }] }
+  const off = await synth('還沒配過音。', { voice: 'v', cacheDir, engine, measure: () => 1, offline: true })
+  assert.equal(calls, 0)
+  assert.equal(off.estimated, true)
+  assert.equal(off.offline, true)
+  assert.equal(off.file, null)
+  await synth('配過音了。', { voice: 'v', cacheDir, engine, measure: () => 1 })
+  assert.equal(calls, 1)
+  const hit = await synth('配過音了。', { voice: 'v', cacheDir, engine, measure: () => 1, offline: true })
+  assert.equal(calls, 1)
+  assert.equal(hit.cached, true)
+})
