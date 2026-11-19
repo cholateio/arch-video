@@ -34,7 +34,7 @@ export default function statement(scene, ctx) {
     ctx.from(`.sg${k} .in`, { yPercent: 108, duration: 0.5, ease: 'power3.out' }, t)
     if (s.tone) ctx.from(`.sg${k} .ul`, { scaleX: 0, duration: 0.35, ease: 'power2.out' }, t + 0.35)
   })
-  ctx.from('.dimline', { scaleX: 0, duration: 0.5, ease: 'power2.inOut' }, t + 0.55)
-  if (note) ctx.from('.dimnote', { opacity: 0, y: 8, duration: 0.3, ease: 'power2.out' }, note.at != null ? ctx.t(note.at) : t + 0.9)
+  ctx.from('.dimline', { scaleX: 0, duration: 0.5, ease: 'power2.inOut' }, t + 0.3)
+  if (note) ctx.from('.dimnote', { opacity: 0, y: 8, duration: 0.3, ease: 'power2.out' }, note.at != null ? ctx.t(note.at) : t + 0.5)
   return html
 }

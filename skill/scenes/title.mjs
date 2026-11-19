@@ -35,10 +35,13 @@ export default function title(scene, ctx) {
   ctx.to('.cm', { strokeDashoffset: 0, duration: 0.5, stagger: 0.06, ease: 'power2.out' }, t0)
   if (K) ctx.from('.kicker', { opacity: 0, x: -16, duration: 0.35, ease: 'power2.out' }, K.at != null ? ctx.t(K.at) : t0 + 0.1)
 
-  const tT = T.at != null ? ctx.t(T.at) : t0 + 0.3
+  const tT = T.at != null ? ctx.t(T.at) : t0 + 0.1
   let tDone = tT + 0.5
   if (typed) {
-    const typing = chars.length * 0.055
+    // The title is fully typed by the time the voice reaches it (its cue, or the first line), so a short lead types faster.
+    // An object cue is an exact start time chosen by hand: it types at the natural speed from that moment.
+    const said = T.at == null ? ctx.scene.lines[0]?.start : typeof T.at === 'object' ? null : ctx.deadline(T.at)
+    const typing = Math.min(chars.length * 0.055, said != null ? Math.max(0.4, said - tT) : Infinity)
     ctx.from('.caret', { opacity: 0, duration: 0.01 }, tT - 0.05)
     ctx.to('.mask', { width, duration: typing, ease: `steps(${chars.length})` }, tT)
     ctx.to('.caret', { opacity: 0, duration: 0.25 }, tT + typing + 0.7)

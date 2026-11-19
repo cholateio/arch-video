@@ -17,6 +17,7 @@ function estimate(text) {
   for (const tok of tokens) {
     const d = /[A-Za-z0-9]/.test(tok) ? 340 : isWide(tok) && !/[，。、；：？！「」『』（）]/.test(tok) ? 230 : 280
     if (d !== 280) words.push({ part: tok, start: t, end: t + d })
+    else if (words.length) words.at(-1).part += tok // punctuation rides on the word before it, as the real engine reports it; cues use it to find clauses
     t += d
   }
   return { duration: t / 1000 + 0.1, words }

@@ -48,6 +48,6 @@ test('估算時間時，英文詞與全形字都算進去，標點只算停頓',
   resetBreaker()
   const engine = async () => { throw new Error('offline') }
   const r = await synth('這個 skill 很好。', { voice: 'v', cacheDir: tmp(), engine })
-  assert.deepEqual(r.words.map((w) => w.part), ['這', '個', 'skill', '很', '好'])
+  assert.deepEqual(r.words.map((w) => w.part), ['這', '個', 'skill', '很', '好。'])
   assert.ok(r.duration > 1)
 })

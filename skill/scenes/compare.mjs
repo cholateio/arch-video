@@ -28,9 +28,9 @@ export default function compare(scene, ctx) {
   let t = ctx.t()
   cards.forEach((c, k) => {
     const items = c.items.map(norm)
-    const first = items[0].at != null ? ctx.t(items[0].at) : null
-    // The left card opens the scene so the frame is never empty; the right one arrives just before its first item.
-    const tc = c.at != null ? ctx.t(c.at) : k === 0 ? ctx.t() : first != null ? Math.max(ctx.t(), first - 0.4) : t + 0.5
+    // The left card opens the scene so the frame is never empty. The right one arrives before the line that first
+    // mentions one of its items: its title is usually said at the start of that line, ahead of the items.
+    const tc = c.at != null ? ctx.t(c.at) : k === 0 ? ctx.t() : items[0].at != null ? ctx.t(ctx.lineOf(items[0].at)) : t + 0.5
     ctx.from(`.c${k}`, { opacity: 0, y: 30, duration: 0.45, ease: 'power2.out' }, tc)
     t = tc + 0.4
     items.forEach((it, i) => {

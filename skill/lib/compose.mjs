@@ -2,7 +2,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import scenes from '../scenes/index.mjs'
-import { LEAD, cueTime } from './timeline.mjs'
+import { load } from 'cheerio'
+import { LEAD, cueTime, cueLine, cueDeadline } from './timeline.mjs'
 import { ROOT, esc, round, isWide } from './util.mjs'
 
 const FONTS = [
@@ -68,6 +69,8 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     const ctx = {
       id: s.id, theme, baseDir, scene: ts,
       t: (at) => cueTime(ts, at),
+      lineOf: (at) => cueLine(ts, at),
+      deadline: (at) => cueDeadline(ts, at),
       warn: (m) => warn(`場景 ${s.id}：${m}`),
       to: (sel, vars, t) => anims.push(['to', scope(sel), vars, check(t, sel)]),
       from: (sel, vars, t) => anims.push(['from', scope(sel), vars, check(t, sel)]),
@@ -79,6 +82,21 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     // A scene must not open on an empty frame: the first element has to appear within 1.5s.
     const first = Math.min(...anims.slice(before).map((a) => a.at(-1)))
     if (first - ts.contentStart > 1.5) warn(`場景 ${s.id}：開場後 ${round(first - ts.contentStart)} 秒畫面才有東西，請讓第一個元素早點出現`)
+    // The picture leads the voice: nothing may make its entrance after the narration of the scene is over.
+    const last = ts.lines.at(-1)
+    if (last) {
+      const spokenEnd = last.start + (last.words?.length ? last.words.at(-1).end / 1000 : last.duration)
+      // Everything counts except tweens that only take something away (fade out, dim, collapse).
+      const exits = (a) => a[0] === 'to' && (a[2].opacity < 1 || a[2].scale === 0 || a[2].scaleX === 0 || a[2].scaleY === 0)
+      // A staggered tween starts its last target (count - 1) * stagger after the recorded time.
+      const $ = load(`<section id="${s.id}">${inner}</section>`, null, false)
+      const lastStart = (a) => {
+        const stagger = a.at(-2).stagger
+        return a.at(-1) + (typeof stagger === 'number' ? stagger * Math.max(0, $(a[1]).length - 1) : 0)
+      }
+      const late = anims.slice(before).filter((a) => !exits(a) && lastStart(a) > spokenEnd)
+      if (late.length) warn(`場景 ${s.id}：有 ${late.length} 個元素在旁白講完之後才出現（${late[0][1]}），請把觸發點往前移`)
+    }
     const next = tl.scenes[i + 1]
     const duration = round(ts.end - ts.start + (next?.transition?.startsWith('push') ? LEAD.push : 0))
     body.push(`<section id="${s.id}" class="scene clip" data-start="${ts.start}" data-duration="${duration}">\n${inner}\n</section>`)
