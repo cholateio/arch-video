@@ -20,7 +20,8 @@
   - `skill/SKILL.md` — 給 Claude 的工作流程：體檢、整理素材、審核點一、畫架構圖、寫腳本與分鏡、預覽、審核點二、渲染、交付
   - `skill/scripts/arch-video.mjs` — 指令進入點：`doctor`、`build <分鏡檔>`
   - `skill/lib/` — `doctor`（體檢）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`secrets`（機密掃描）、`icons`、`util`
-  - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`、`chat`、`compare`、`list`、`stat`、`tree`、`cycle`、`terminal`
+  - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`、`chat`、`compare`、`list`、`stat`、`tree`、`cycle`、`terminal`、`layout`
+  - `skill/widgets/` — 零件，一個檔案一種，放在 `layout` 場景的格子裡：`figure`、`units`、`slots`、`meter`
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式
   - `skill/references/` — 整理素材、寫腳本與分鏡的規則：`source-rules.md`、`script-rules.md`、`storyboard-format.md`、`review-checklist.md`
   - `skill/examples/demo/` — 示範分鏡與它用到的藍圖（跑測試與調整版面用）
@@ -48,7 +49,7 @@
 - Conventional commits（`type(scope): 摘要`）；commit 前跑 `npm --prefix skill test`。
 - 程式內註解與識別字用英文；給使用者的訊息（指令輸出、錯誤、警告）與文件用繁體中文。
 - 新增場景元件：在 `skill/scenes/` 加一個檔案並登記到 `index.mjs`，樣式加進 `themes/base.css`，
-  用法寫進 `skill/references/storyboard-format.md`。
+  用法寫進 `skill/references/storyboard-format.md`。新增零件相同，檔案放在 `skill/widgets/`。
 - 改了畫面就重跑 `npm --prefix skill run demo`，並實際看 `stills/sheet.jpg`。
 - GitHub Actions: top-level `permissions: contents: read`, raised per job only when needed.
 - GitHub Actions: pin every `uses:` to a 40-character commit SHA with a trailing `# vX.Y.Z` comment.

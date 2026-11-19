@@ -41,7 +41,8 @@ export function reasonWarnings(board) {
     out.push(`旁白 ${lines.length} 句裡只有 ${reasons} 句帶有講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）：影片會變成流程與設定的報告。請照 script-rules.md 的「決定怎麼講」，補上為什麼這樣選、不這樣會怎樣`)
   }
   for (const s of board.scenes) {
-    if (s.type === 'stat' && !(s.lines ?? []).some((l) => REASON.test(said(l)))) {
+    // Every widget a layout can hold so far puts quantities on screen, so a layout is held to the same rule as stat.
+    if (['stat', 'layout'].includes(s.type) && !(s.lines ?? []).some((l) => REASON.test(said(l)))) {
       out.push(`場景 ${s.id}：旁白裡找不到講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）。每個上畫面的數字都要說它為什麼是這個值、或它造成什麼結果；講不出來就不要放`)
     }
   }

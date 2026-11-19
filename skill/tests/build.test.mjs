@@ -39,4 +39,5 @@ test('數字場景沒有講原因或影響會警告，唸法裡有也算', () =>
   assert.deepEqual(reasonWarnings(stat([{ text: '一小時進來三十則，就會排到第三輪。' }])), [])
   assert.deepEqual(reasonWarnings(stat([{ text: '每輪最多十則。' }, { text: '為了不超過額度。' }])), [])
   assert.deepEqual(reasonWarnings(stat([{ text: 'cap 10', say: '上限十則，因為額度有限。' }])), [])
+  assert.match(reasonWarnings({ scenes: [{ id: 'p', type: 'layout', lines: [{ text: '一天二十四輪。' }] }] })[0], /場景 p：/)
 })

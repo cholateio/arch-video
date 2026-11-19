@@ -8,6 +8,7 @@ import { buildTimeline, CUE_LEAD } from '../lib/timeline.mjs'
 import { compose } from '../lib/compose.mjs'
 import theme from '../themes/night.mjs'
 import scenes from '../scenes/index.mjs'
+import widgets from '../widgets/index.mjs'
 import { ROOT } from '../lib/util.mjs'
 
 // One word per character, 200ms each, so any substring of a line works as a cue.
@@ -38,7 +39,17 @@ const samples = {
   tree: { root: 'x/', items: [{ name: 'a/' }, { name: 'b.py', depth: 2, note: '說明', at: '旁白' }] },
   cycle: { center: '中心', steps: [{ icon: 'eye', label: '一' }, { icon: 'wrench', label: '二' }, { icon: 'check', label: '三' }] },
   terminal: { lines: [{ type: 'cmd', text: 'ls -la' }, { type: 'ok', text: 'done', at: '為止' }] },
+  layout: { title: '標題', parts: [{ widget: 'units', total: 20, group: 10, head: '左', mood: 'good', steps: [{ take: 10, at: '旁白' }], left: { label: '剩下' }, tally: { label: '輪' }, foot: '註' }, { widget: 'figure', value: '10', label: '上限' }] },
 }
+
+// One part per widget, for the layout scene.
+const parts = {
+  figure: { value: '10', unit: '則', label: '上限', tone: 'accent', at: '旁白' },
+  units: { total: 30, group: 10, steps: [{ take: 10 }, { take: 20, rounds: 2, tone: 'accent', at: '內容' }], left: { label: '剩下', unit: '則' }, tally: { label: '用了', unit: '輪' } },
+  slots: { total: 24, ends: ['0 時', '24 時'], rows: [{ label: '應該', on: 24 }, { label: '實際', on: [0, 5, 9], tone: 'accent', at: '內容' }], sum: { label: '次', per: 1 } },
+  meter: { unit: '則', bars: [{ label: '上限', value: 240 }, { label: '實測', value: 148, tone: 'accent', at: '內容' }], limit: { value: 240, label: '一天最多' } },
+}
+const one = (type, data) => ({ scenes: [{ id: 'x', type, data, lines: [{ text: '旁白內容' }] }] })
 
 test('每一種場景元件都有測試樣本', () => {
   assert.deepEqual(Object.keys(samples).sort(), Object.keys(scenes).sort())
@@ -74,7 +85,6 @@ test('架構圖寫錯分區、節點或連線的 id 會報錯', () => {
 })
 
 test('元件的數量限制會報錯', () => {
-  const one = (type, data) => ({ scenes: [{ id: 'x', type, data, lines: [{ text: '旁白內容' }] }] })
   assert.throws(() => run(one('cycle', { steps: [{ icon: 'eye', label: '一' }] })), /3 到 5 步/)
   assert.throws(() => run(one('stat', { items: [] })), /1 到 3 個/)
   assert.throws(() => run(one('stat', { items: [{ value: '1', label: 'x', tone: 'red' }] })), /tone 只能是/)
@@ -176,4 +186,65 @@ test('指令來不及在旁白講到之前打完時會警告', () => {
     }],
   }
   assert.match(run(board).warnings.join('\n'), /比旁白晚/)
+})
+
+test('每一種零件都有測試樣本，放進各種版面都能合成', () => {
+  assert.deepEqual(Object.keys(parts).sort(), Object.keys(widgets).sort())
+  const part = (name, extra) => ({ widget: name, ...parts[name], ...extra })
+  const data = [
+    { parts: [part('meter')] },
+    { title: '左右', ratio: [3, 2], parts: [part('units', { head: '左', mood: 'bad', foot: { text: '註', at: '內容' } }), part('figure')] },
+    { arrange: 'stack', parts: [part('slots'), part('meter')] },
+    { parts: [part('figure'), part('units'), part('figure', { enter: '內容' })] },
+  ]
+  for (const d of data) {
+    const { html, warnings } = run({ scenes: [{ id: 'x', type: 'layout', data: d, lines: [{ text: '這裡是旁白的內容，講到這裡為止。' }] }] })
+    assert.deepEqual(warnings, [])
+    d.parts.forEach((p, k) => assert.ok(html.includes(`"#x .p${k} `), `第 ${k + 1} 個零件（${p.widget}）沒有任何動畫`))
+  }
+})
+
+test('零件預設隨場景一起進場；寫了 enter 才等到那個觸發點', () => {
+  const lines = [{ text: '先講第一句。' }, { text: '再講第二句。' }]
+  const headAt = (enter) => {
+    const data = { parts: [{ widget: 'figure', value: 'A', label: '甲', head: '左' }, { widget: 'figure', value: 'B', label: '乙', head: '右', enter }] }
+    const { html, tl } = run({ scenes: [{ id: 'x', type: 'layout', data, lines }] })
+    return { at: Number(html.match(/\["from","#x \.p1 \.pl",\{[^}]*\},([\d.]+)\]/)[1]), first: tl.scenes[0].lines[0].start }
+  }
+  const plain = headAt()
+  assert.ok(plain.at < plain.first)
+  const late = headAt(1)
+  assert.ok(late.at > late.first)
+})
+
+test('版面與零件寫錯會報錯', () => {
+  const lay = (d) => run(one('layout', d))
+  assert.throws(() => lay({ parts: [] }), /parts 要 1 到 3 個/)
+  assert.throws(() => lay({ arrange: 'stack', parts: [{ widget: 'figure', ...parts.figure }] }), /要 2 個 parts/)
+  assert.throws(() => lay({ parts: [{ widget: 'pie' }] }), /不認得的零件「pie」/)
+  assert.throws(() => lay({ parts: [{ widget: 'units', total: 10, steps: [{ take: 11 }] }] }), /超過 total/)
+  assert.throws(() => lay({ parts: [{ widget: 'units', total: 10, group: 0, steps: [{ take: 1 }] }] }), /group 要是正整數/)
+  assert.throws(() => lay({ parts: [{ widget: 'slots', total: 24, rows: [{ on: -1 }] }] }), /0 到 24 的整數/)
+  assert.throws(() => lay({ parts: [{ widget: 'slots', total: 24, rows: [{ on: 1e9 }] }] }), /0 到 24 的整數/)
+  assert.throws(() => lay({ ratio: [1, 4], parts: [{ widget: 'slots', total: 24, rows: [{ on: 24 }], sum: { label: '次' } }, { widget: 'figure', value: '1', label: '甲' }] }), /放不下 24 格和旁邊的計數/)
+  // 24 cells of 16px would fit 400px, but each loses 3px to the gap.
+  assert.throws(() => lay({ ratio: [1, 3], parts: [{ widget: 'slots', total: 24, rows: [{ on: 24 }] }, { widget: 'figure', value: '1', label: '甲' }] }), /放不下 24 格/)
+  assert.throws(() => lay({ parts: [{ widget: 'slots', total: 24, rows: [{ on: [24] }] }] }), /0 到 23 之間/)
+  assert.throws(() => lay({ parts: [{ widget: 'meter', max: 100, bars: [{ label: '甲', value: 148 }] }] }), /不能小於最大的數值/)
+  assert.throws(() => lay({ parts: [{ widget: 'figure', value: '1' }] }), /要有 value 與 label/)
+})
+
+test('格子太多、擠到看不清楚時會警告', () => {
+  const data = { arrange: 'stack', ratio: [1, 19], parts: [{ widget: 'units', total: 400, steps: [{ take: 1 }] }, { widget: 'figure', value: '2', label: '乙' }] }
+  assert.match(run(one('layout', data)).warnings.join('\n'), /看不清楚/)
+})
+
+test('上下疊的零件比分到的高度還高時會警告', () => {
+  const lines = [{ text: '這一句旁白講得夠久，足夠讓四條長條都出現。' }]
+  const stack = (ratio) => run({ scenes: [{ id: 'x', type: 'layout', lines, data: { arrange: 'stack', ratio, parts: [{ widget: 'slots', total: 24, rows: [{ on: 24 }] }, { widget: 'meter', bars: [{ label: '甲', value: 1 }, { label: '乙', value: 2 }, { label: '丙', value: 3 }, { label: '丁', value: 4 }] }] } }] }).warnings.join('\n')
+  assert.match(stack([4, 1]), /第 2 個零件（meter）需要 478px 高，這個位置只有 141px/)
+  assert.equal(stack([1, 4]), '')
+  // The counter beside a strip is taller than a bare strip, and it counts too.
+  const withSum = (ratio) => run({ scenes: [{ id: 'x', type: 'layout', lines, data: { arrange: 'stack', ratio, parts: [{ widget: 'slots', total: 24, rows: [{ on: 24 }], sum: { label: '次' } }, { widget: 'figure', value: '1', label: '甲' }] } }] }).warnings.join('\n')
+  assert.match(withSum([1, 6]), /第 1 個零件（slots）需要 117px 高/)
 })

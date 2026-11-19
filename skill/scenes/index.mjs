@@ -10,5 +10,6 @@ import stat from './stat.mjs'
 import tree from './tree.mjs'
 import cycle from './cycle.mjs'
 import terminal from './terminal.mjs'
+import layout from './layout.mjs'
 
-export default { title, statement, file, map, flow, chat, compare, list, stat, tree, cycle, terminal }
+export default { title, statement, file, map, flow, chat, compare, list, stat, tree, cycle, terminal, layout }

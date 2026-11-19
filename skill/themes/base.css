@@ -165,3 +165,61 @@ html, body { width: var(--w); height: var(--h); overflow: hidden; background: va
 .map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 /* A zoomed-in diagram runs past the stage; fade it out under the chapter chip so stray labels do not sit beside it. */
 .map-fade { position: absolute; left: 0; right: 0; top: 0; height: 112px; background: linear-gradient(var(--paper) 78%, transparent); pointer-events: none; }
+
+/* ── layout: parts that each hold one widget ── */
+.layout .head { position: absolute; left: 0; right: 0; top: 20px; text-align: center; }
+.layout .head h2 { font-size: var(--fs-heading); font-weight: 700; line-height: 1.3; }
+.layout .head .rule { display: block; width: 120px; height: 3px; margin: 18px auto 0; background: var(--accent); }
+.layout .part { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.layout .column { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.layout .column .part { position: relative; flex: none; }
+.layout .pl { flex: none; height: 76px; display: flex; align-items: flex-start; gap: 14px; font-size: var(--fs-label); font-weight: 700; line-height: 44px; white-space: nowrap; }
+.layout .pl .ci { display: flex; }
+.layout .pl svg { width: 44px; height: 44px; }
+.layout .mood-bad .pl .ci { color: var(--accent); }
+.layout .mood-good .pl .ci { color: var(--accent2); }
+.layout .pc { flex: none; height: 84px; display: flex; align-items: flex-end; font-size: var(--fs-label); font-weight: 700; line-height: 44px; white-space: nowrap; }
+.layout .wg { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* counter: a number that changes while the picture does */
+.layout .cnt .num { display: flex; align-items: baseline; justify-content: center; }
+.layout .cnt b { font-family: var(--font-mono); font-size: var(--fs-count); font-weight: 700; line-height: 1; }
+.layout .cnt .unit { margin-left: 10px; font-size: var(--fs-body); font-weight: 700; }
+.layout .cnt .lab { margin-top: 10px; text-align: center; font-size: var(--fs-small); line-height: 1.3; color: var(--ink-soft); }
+
+/* widget: figure */
+.wg-figure .num { display: flex; align-items: baseline; justify-content: center; }
+.wg-figure b { font-family: var(--font-mono); font-size: var(--fs-stat); font-weight: 700; line-height: 1; }
+.wg-figure .unit { margin-left: 12px; font-size: var(--fs-lead); font-weight: 700; }
+.wg-figure .bar { display: block; height: 3px; margin: 24px 0 18px; background: currentColor; transform-origin: 0 50%; }
+.wg-figure .lab { font-size: var(--fs-label); font-weight: 700; color: var(--ink); }
+
+/* widget: units */
+.wg-units .grid { display: grid; }
+.wg-units .u { position: relative; display: block; border: var(--line-thin) solid var(--ink-soft); border-radius: 3px; }
+.wg-units .u i { position: absolute; inset: calc(var(--line-thin) * -1); border-radius: 3px; background: currentColor; }
+.wg-units .cnts { display: flex; gap: 90px; margin-top: 30px; }
+
+/* widget: slots */
+.layout .wg-slots { flex-direction: row; gap: 60px; }
+.wg-slots .strips { display: flex; flex-direction: column; gap: 26px; }
+.wg-slots .rl { margin-bottom: 12px; font-size: var(--fs-small); font-weight: 700; line-height: 1.3; color: var(--ink-soft); }
+.wg-slots .strip { display: flex; }
+.wg-slots .c { position: relative; flex: 1; display: block; height: 64px; border: var(--line-thin) solid var(--ink-soft); border-radius: 4px; }
+.wg-slots .c i { display: none; }
+.wg-slots .c.on i { display: block; position: absolute; inset: calc(var(--line-thin) * -1); border-radius: 4px; background: currentColor; transform-origin: 50% 100%; }
+.wg-slots .ends { display: flex; justify-content: space-between; margin-top: -12px; font-family: var(--font-mono); font-size: var(--fs-small); color: var(--ink-soft); }
+.wg-slots .cnt { flex: none; width: 280px; }
+
+/* widget: meter */
+.wg-meter .bars { position: relative; width: 100%; display: flex; flex-direction: column; gap: 34px; }
+.wg-meter .bars.has-limit { padding-top: 60px; }
+.wg-meter .bh { display: flex; align-items: baseline; gap: 26px; margin-bottom: 12px; }
+.wg-meter .lab { font-size: var(--fs-label); font-weight: 700; line-height: 1.3; color: var(--ink); }
+.wg-meter .val b { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 700; }
+.wg-meter .val .unit { margin-left: 8px; font-size: var(--fs-small); font-weight: 700; }
+.wg-meter .track { height: 30px; border: var(--line-thin) solid var(--ink-soft); border-radius: 6px; overflow: hidden; }
+.wg-meter .fill { display: block; height: 100%; background: currentColor; transform-origin: 0 50%; }
+.wg-meter .limit { position: absolute; top: 0; bottom: -14px; width: 0; }
+.wg-meter .limit i { position: absolute; left: -1px; top: 50px; bottom: 0; border-left: var(--line) dashed var(--accent); transform-origin: 50% 0; }
+.wg-meter .limit span { position: absolute; right: 0; top: 0; font-size: var(--fs-small); font-weight: 700; line-height: 1.3; color: var(--accent); white-space: nowrap; }
+.wg-meter .limit.near span { right: auto; left: 0; }
