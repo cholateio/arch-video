@@ -75,7 +75,7 @@ export default function layout(scene, ctx) {
     const box = { width: Math.round(b.w), height: Math.round(b.h - (label ? LABEL : 0) - (caption ? CAPTION : 0)) }
     const inner = render(fields, {
       box, enter, theme: ctx.theme,
-      t: ctx.t, lineOf: ctx.lineOf,
+      t: ctx.t, lineOf: ctx.lineOf, deadline: ctx.deadline,
       warn: (m) => ctx.warn(`第 ${k + 1} 個零件（${name}）：${m}`),
       fail: (m) => { throw new Error(`${where}（${name}）：${m}`) },
       // A widget reports the height it needs; one that does not fit its part would run into its neighbour or the subtitles.

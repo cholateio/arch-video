@@ -141,10 +141,23 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
     else { run = { chapter: ts.chapter, start: ts.start, end: ts.end, lead: LEAD[ts.transition] }; runs.push(run) }
   })
   const pad = (n) => String(n).padStart(2, '0')
+  // The strip shows every chapter, so the viewer always sees where the video is. With a short name on every chapter
+  // it is a row of named pills; otherwise a row of dots with the current chapter's number and label spelled out.
+  const named = chapters.length > 0 && chapters.every((c) => c.short)
+  if (!named && chapters.some((c) => c.short)) warn('chapters 裡只有一部分寫了 short：要每一章都寫，章節標示才會顯示成一排名稱')
+  chapters.forEach((c) => { if (!c.short && !c.label) throw new Error(`章節「${c.id}」要有 label 或 short`) })
+  const pillsWidth = chapters.reduce((n, c) => n + subtitleUnits(c.short ?? '') * theme.type.chip + 36, 0) + (chapters.length - 1) * 34
+  const pills = named && pillsWidth <= theme.frame.width - 220
+  if (named && !pills) warn(`章節的 short 加起來太長（約 ${Math.round(pillsWidth)}px），放不下一排，改用圓點顯示；請把每個 short 縮到四個字以內`)
+  const strip = (cur) => chapters.map((c, i) => {
+    const state = i < cur ? ' done' : i === cur ? ' cur' : ''
+    if (pills) return `${i ? '<i class="ln"></i>' : ''}<span class="pill${state}">${esc(c.short)}</span>`
+    return i === cur ? `<span class="cur"><b>${pad(i + 1)}</b>${esc(c.label ?? c.short)}</span>` : `<i class="dot${state}"></i>`
+  }).join('')
   runs.filter((r) => r.chapter).forEach((r, k) => {
     const idx = chapters.findIndex((c) => c.id === r.chapter)
     if (idx < 0) throw new Error(`章節「${r.chapter}」沒有列在 chapters 裡`)
-    body.push(`<div id="chip-${k}" class="chip clip" data-start="${r.start}" data-duration="${round(r.end - r.start)}"><b>${pad(idx + 1)} / ${pad(chapters.length)}</b>${esc(chapters[idx].label)}</div>`)
+    body.push(`<div id="chip-${k}" class="chip clip" data-start="${r.start}" data-duration="${round(r.end - r.start)}">${strip(idx)}</div>`)
     anims.push(['from', `#chip-${k}`, { opacity: 0, x: -12, duration: 0.3, ease: 'power2.out' }, round(r.start + r.lead)])
   })
   body.push('<div id="glow"></div>')

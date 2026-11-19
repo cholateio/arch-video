@@ -5,5 +5,12 @@ import figure from './figure.mjs'
 import units from './units.mjs'
 import slots from './slots.mjs'
 import meter from './meter.mjs'
+import points from './points.mjs'
+import steps from './steps.mjs'
+import term from './term.mjs'
+import panel from './panel.mjs'
 
-export default { figure, units, slots, meter }
+export default { figure, units, slots, meter, points, steps, term, panel }
+
+// Widgets that only arrange words and numbers. A layout made of nothing else counts as a text scene.
+export const TEXT_WIDGETS = ['figure', 'points']

@@ -1,7 +1,7 @@
 // Storyboard-level checks that need no narration or rendering.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { balanceWarnings, reasonWarnings, voiceProblem } from '../lib/build.mjs'
+import { balanceWarnings, pictureWarnings, reasonWarnings, voiceProblem } from '../lib/build.mjs'
 
 const board = (...types) => ({ scenes: types.map((type, i) => ({ id: `s${i}`, type })) })
 
@@ -39,5 +39,20 @@ test('數字場景沒有講原因或影響會警告，唸法裡有也算', () =>
   assert.deepEqual(reasonWarnings(stat([{ text: '一小時進來三十則，就會排到第三輪。' }])), [])
   assert.deepEqual(reasonWarnings(stat([{ text: '每輪最多十則。' }, { text: '為了不超過額度。' }])), [])
   assert.deepEqual(reasonWarnings(stat([{ text: 'cap 10', say: '上限十則，因為額度有限。' }])), [])
-  assert.match(reasonWarnings({ scenes: [{ id: 'p', type: 'layout', lines: [{ text: '一天二十四輪。' }] }] })[0], /場景 p：/)
+  const lay = (widget) => ({ scenes: [{ id: 'p', type: 'layout', data: { parts: [{ widget }] }, lines: [{ text: '一天二十四輪。' }] }] })
+  assert.match(reasonWarnings(lay('slots'))[0], /場景 p：/)
+  assert.deepEqual(reasonWarnings(lay('steps')), [])
+})
+
+test('純文字的場景超過四成、或連續三個以上會警告；只放文字零件的 layout 也算', () => {
+  const words = { id: 'w', type: 'layout', data: { parts: [{ widget: 'points' }, { widget: 'figure' }] } }
+  const picture = { id: 'p', type: 'layout', data: { parts: [{ widget: 'points' }, { widget: 'units' }] } }
+  const s = (type, i) => ({ id: `s${i}`, type })
+  const mostly = ['chat', 'compare', 'statement', 'title', 'map', 'statement', 'flow', 'list', 'title'].map(s)
+  assert.match(pictureWarnings({ scenes: mostly })[0], /有 4 個，超過 9 個場景的四成/)
+  const fine = ['chat', 'compare', 'title', 'map', 'map', 'flow', 'statement', 'terminal', 'list', 'title'].map(s)
+  assert.deepEqual(pictureWarnings({ scenes: [...fine, picture] }), [])
+  const run = ['map', 'statement', 'compare', 'map', 'map', 'flow', 'map', 'flow', 'title'].map(s)
+  run.splice(3, 0, words)
+  assert.match(pictureWarnings({ scenes: run }).join('\n'), /連續 3 個純文字的場景（s1、s2、w）/)
 })

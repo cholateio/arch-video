@@ -40,6 +40,7 @@ export default {
     small: 24, // secondary text: speaker names, list sub-lines
     stat: 150, // big numbers
     count: 76, // counters beside a widget
+    row: 30, // rows inside a panel
   },
   layout: { align: 'left', inset: 96 }, // title and statement are left-aligned, 96px from the stage edge
   frame: { width: 1920, height: 1080, fps: 30 },

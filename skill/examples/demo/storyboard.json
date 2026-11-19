@@ -10,15 +10,23 @@
   "chapters": [
     {
       "id": "principle",
-      "label": "PRINCIPLE"
+      "label": "PRINCIPLE",
+      "short": "原則"
     },
     {
       "id": "workflow",
-      "label": "WORKFLOW"
+      "label": "WORKFLOW",
+      "short": "流程"
+    },
+    {
+      "id": "widgets",
+      "label": "WIDGETS",
+      "short": "零件"
     },
     {
       "id": "result",
-      "label": "RESULT"
+      "label": "RESULT",
+      "short": "成果"
     }
   ],
   "scenes": [
@@ -172,6 +180,263 @@
         },
         {
           "text": "畫完之後，還要用腳本自檢。"
+        }
+      ]
+    },
+    {
+      "id": "w-steps",
+      "type": "layout",
+      "chapter": "widgets",
+      "transition": "wipe",
+      "data": {
+        "title": "版面：左邊流程，右邊重點",
+        "ratio": [
+          2,
+          3
+        ],
+        "parts": [
+          {
+            "widget": "steps",
+            "direction": "column",
+            "steps": [
+              {
+                "icon": "magnifying-glass",
+                "label": "讀程式碼",
+                "at": "先讀"
+              },
+              {
+                "icon": "pencil-simple",
+                "label": "畫圖",
+                "tone": "accent",
+                "at": "再畫"
+              },
+              {
+                "icon": "check-circle",
+                "label": "檢查",
+                "at": "最後"
+              }
+            ]
+          },
+          {
+            "widget": "points",
+            "frame": true,
+            "style": "check",
+            "head": "為什麼分三步",
+            "mood": "good",
+            "items": [
+              {
+                "text": "先讀再畫，圖才會對得上程式",
+                "at": "因為"
+              },
+              {
+                "text": "檢查交給腳本，不靠眼睛",
+                "sub": "這是示範用的內容",
+                "at": "腳本"
+              }
+            ]
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "這是示範：先讀程式碼，再畫圖，最後檢查。"
+        },
+        {
+          "text": "因為先讀再畫，圖才對得上；檢查交給腳本。"
+        }
+      ]
+    },
+    {
+      "id": "w-term",
+      "type": "layout",
+      "chapter": "widgets",
+      "transition": "push",
+      "data": {
+        "parts": [
+          {
+            "widget": "term",
+            "title": "terminal（示意）",
+            "lines": [
+              {
+                "type": "cmd",
+                "text": "python3 check.py overview.svg",
+                "at": "一行指令"
+              },
+              {
+                "type": "out",
+                "text": "nodes 12 / 12",
+                "at": "結果"
+              },
+              {
+                "type": "ok",
+                "text": "0 errors, 0 warnings",
+                "at": "結果"
+              }
+            ]
+          },
+          {
+            "widget": "panel",
+            "title": "檢查紀錄（示意）",
+            "rows": [
+              {
+                "text": "節點數量",
+                "state": "ok",
+                "badge": "12 / 12"
+              },
+              {
+                "text": "文字重疊",
+                "state": "wait",
+                "then": {
+                  "state": "ok",
+                  "at": "結果"
+                }
+              },
+              {
+                "text": "連線交叉",
+                "state": "wait",
+                "badge": "檢查中",
+                "then": {
+                  "state": "fail",
+                  "badge": "2 處",
+                  "at": "失敗"
+                }
+              }
+            ],
+            "buttons": [
+              {
+                "text": "重畫",
+                "at": "失敗"
+              },
+              "略過"
+            ]
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "左邊是一行指令，右邊是它的檢查紀錄。"
+        },
+        {
+          "text": "結果出來時，紀錄會跟著更新；失敗的那一項會標出來。"
+        }
+      ]
+    },
+    {
+      "id": "w-count",
+      "type": "layout",
+      "chapter": "widgets",
+      "transition": "push",
+      "data": {
+        "title": "版面：上下兩格",
+        "arrange": "stack",
+        "parts": [
+          {
+            "widget": "slots",
+            "total": 12,
+            "ends": [
+              "第 1 個",
+              "第 12 個"
+            ],
+            "rows": [
+              {
+                "label": "上限：12 個節點",
+                "on": 12,
+                "tone": "ink"
+              },
+              {
+                "label": "這張圖用了 9 個（示意）",
+                "on": 9,
+                "tone": "accent",
+                "at": "九個"
+              }
+            ]
+          },
+          {
+            "widget": "meter",
+            "unit": "個",
+            "max": 12,
+            "bars": [
+              {
+                "label": "用掉的節點",
+                "value": 9,
+                "tone": "accent",
+                "at": "九個"
+              }
+            ],
+            "limit": {
+              "value": 12,
+              "label": "上限 12",
+              "at": "上限"
+            }
+          }
+        ],
+        "ratio": [
+          3,
+          2
+        ]
+      },
+      "lines": [
+        {
+          "text": "節點上限是十二個，因為再多就看不清楚。"
+        },
+        {
+          "text": "這張圖用了九個，所以還有空間。"
+        }
+      ]
+    },
+    {
+      "id": "w-trio",
+      "type": "layout",
+      "chapter": "widgets",
+      "transition": "push",
+      "data": {
+        "parts": [
+          {
+            "widget": "figure",
+            "value": "12",
+            "unit": "個",
+            "label": "節點上限",
+            "tone": "accent"
+          },
+          {
+            "widget": "units",
+            "total": 12,
+            "group": 4,
+            "head": "已經畫的",
+            "steps": [
+              {
+                "take": 9,
+                "at": "九個"
+              }
+            ],
+            "left": {
+              "label": "還能加",
+              "unit": "個"
+            }
+          },
+          {
+            "widget": "steps",
+            "steps": [
+              {
+                "icon": "eye",
+                "label": "看"
+              },
+              {
+                "icon": "wrench",
+                "label": "修",
+                "tone": "accent2",
+                "at": "修"
+              }
+            ]
+          }
+        ]
+      },
+      "lines": [
+        {
+          "text": "三格的排法：上限、已經畫的九個、接下來怎麼修。"
+        },
+        {
+          "text": "超過上限就會報錯，所以要先合併再畫。"
         }
       ]
     },

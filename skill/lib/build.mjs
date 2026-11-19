@@ -4,6 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { synth } from './tts.mjs'
+import { TEXT_WIDGETS } from '../widgets/index.mjs'
 import { buildTimeline, LEAD } from './timeline.mjs'
 import { compose } from './compose.mjs'
 import { hf, ffmpeg } from './render.mjs'
@@ -27,6 +28,32 @@ export function balanceWarnings(board) {
   return [`佐證類場景（file、terminal、tree）有 ${evidence} 個，超過 ${board.scenes.length} 個場景的三分之一：影片會變成程式碼導讀，請改用架構圖、流程或對比來講，只留必要的範例`]
 }
 
+// Scenes that only arrange words and numbers. A video made mostly of them is a slide deck read aloud.
+const TEXT_SCENES = ['statement', 'compare', 'list', 'stat']
+const MAX_TEXT_SHARE = 0.4
+const NUMBER_WIDGETS = ['figure', 'units', 'slots', 'meter']
+const isText = (s) => TEXT_SCENES.includes(s.type) || (s.type === 'layout' && (s.data?.parts ?? []).length > 0 && s.data.parts.every((p) => TEXT_WIDGETS.includes(p.widget)))
+
+export function pictureWarnings(board) {
+  const out = []
+  const scenes = board.scenes
+  const text = scenes.filter(isText)
+  if (scenes.length >= 8 && text.length > scenes.length * MAX_TEXT_SHARE) {
+    out.push(`純文字的場景（大字、對照卡、清單、數字，以及只放文字零件的 layout）有 ${text.length} 個，超過 ${scenes.length} 個場景的四成：畫面會像在唸投影片。請把其中講數量、時間、進度、狀態、流程的場景改用 layout 的圖形零件、flow、cycle 或架構圖來畫`)
+  }
+  let run = []
+  const flush = () => {
+    if (run.length > 2) out.push(`連續 ${run.length} 個純文字的場景（${run.map((s) => s.id).join('、')}）：中間至少換一個有圖形的場景`)
+    run = []
+  }
+  for (const s of scenes) {
+    if (isText(s)) run.push(s)
+    else flush()
+  }
+  flush()
+  return out
+}
+
 // Words that mark a sentence as giving a reason or a consequence. A script that only reports what exists has almost none.
 const REASON = /因為|所以|為了|否則|不然|這樣一來|代價是|才不會|才能|免得|以免|於是|因此|換來|好處是|壞處是|要是|導致|造成|使得|結果是|結果就|就會|由於|既然/
 const MIN_REASON_SHARE = 0.15
@@ -41,8 +68,9 @@ export function reasonWarnings(board) {
     out.push(`旁白 ${lines.length} 句裡只有 ${reasons} 句帶有講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）：影片會變成流程與設定的報告。請照 script-rules.md 的「決定怎麼講」，補上為什麼這樣選、不這樣會怎樣`)
   }
   for (const s of board.scenes) {
-    // Every widget a layout can hold so far puts quantities on screen, so a layout is held to the same rule as stat.
-    if (['stat', 'layout'].includes(s.type) && !(s.lines ?? []).some((l) => REASON.test(said(l)))) {
+    // A layout that shows quantities is held to the same rule as stat.
+    const numbers = s.type === 'stat' || (s.type === 'layout' && (s.data?.parts ?? []).some((p) => NUMBER_WIDGETS.includes(p.widget)))
+    if (numbers && !(s.lines ?? []).some((l) => REASON.test(said(l)))) {
       out.push(`場景 ${s.id}：旁白裡找不到講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）。每個上畫面的數字都要說它為什麼是這個值、或它造成什麼結果；講不出來就不要放`)
     }
   }
@@ -102,6 +130,7 @@ export async function build(file, flags) {
 
   balanceWarnings(board).forEach(warn)
   reasonWarnings(board).forEach(warn)
+  pictureWarnings(board).forEach(warn)
 
   // Narration rule: only proper nouns stay in English. Other English words need a Chinese reading in `say`; the subtitle `text` may keep the original.
   const proper = board.meta?.properNouns ?? []

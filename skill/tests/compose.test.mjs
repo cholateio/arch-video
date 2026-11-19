@@ -48,6 +48,10 @@ const parts = {
   units: { total: 30, group: 10, steps: [{ take: 10 }, { take: 20, rounds: 2, tone: 'accent', at: '內容' }], left: { label: '剩下', unit: '則' }, tally: { label: '用了', unit: '輪' } },
   slots: { total: 24, ends: ['0 時', '24 時'], rows: [{ label: '應該', on: 24 }, { label: '實際', on: [0, 5, 9], tone: 'accent', at: '內容' }], sum: { label: '次', per: 1 } },
   meter: { unit: '則', bars: [{ label: '上限', value: 240 }, { label: '實測', value: 148, tone: 'accent', at: '內容' }], limit: { value: 240, label: '一天最多' } },
+  points: { frame: true, style: 'check', items: ['第一點', { text: '第二點', sub: '補充', at: '內容' }] },
+  steps: { steps: [{ icon: 'eye', label: '看' }, { icon: 'wrench', label: '修', tone: 'accent', at: '內容' }] },
+  term: { title: '示意', lines: [{ type: 'cmd', text: 'ls -la' }, { type: 'ok', text: 'done', at: '為止' }] },
+  panel: { title: '執行紀錄（示意）', rows: [{ text: '第一輪', state: 'ok', badge: '10/10' }, { text: '第二輪', state: 'wait', badge: '0/10', then: { state: 'fail', badge: '0/10 失敗', at: '內容' } }], buttons: ['重跑', '略過'] },
 }
 const one = (type, data) => ({ scenes: [{ id: 'x', type, data, lines: [{ text: '旁白內容' }] }] })
 
@@ -196,6 +200,9 @@ test('每一種零件都有測試樣本，放進各種版面都能合成', () =>
     { title: '左右', ratio: [3, 2], parts: [part('units', { head: '左', mood: 'bad', foot: { text: '註', at: '內容' } }), part('figure')] },
     { arrange: 'stack', parts: [part('slots'), part('meter')] },
     { parts: [part('figure'), part('units'), part('figure', { enter: '內容' })] },
+    { parts: [part('points'), part('steps')] },
+    { ratio: [2, 3], parts: [part('steps', { direction: 'column' }), part('term')] },
+    { parts: [part('panel'), part('points', { frame: false, style: 'number' })] },
   ]
   for (const d of data) {
     const { html, warnings } = run({ scenes: [{ id: 'x', type: 'layout', data: d, lines: [{ text: '這裡是旁白的內容，講到這裡為止。' }] }] })
@@ -232,6 +239,11 @@ test('版面與零件寫錯會報錯', () => {
   assert.throws(() => lay({ parts: [{ widget: 'slots', total: 24, rows: [{ on: [24] }] }] }), /0 到 23 之間/)
   assert.throws(() => lay({ parts: [{ widget: 'meter', max: 100, bars: [{ label: '甲', value: 148 }] }] }), /不能小於最大的數值/)
   assert.throws(() => lay({ parts: [{ widget: 'figure', value: '1' }] }), /要有 value 與 label/)
+  assert.throws(() => lay({ parts: [{ widget: 'points', items: [] }] }), /items 要 1 到 5 項/)
+  assert.throws(() => lay({ parts: [{ widget: 'steps', steps: [{ icon: 'eye', label: '一' }] }] }), /steps 要 2 到 5 步/)
+  assert.throws(() => lay({ parts: [{ widget: 'term', lines: [] }] }), /終端機要 1 到 6 行/)
+  assert.throws(() => lay({ parts: [{ widget: 'panel', title: '甲', rows: [{ text: '乙', state: 'green' }] }] }), /state 只能是/)
+  assert.throws(() => lay({ parts: [{ widget: 'panel', title: '甲', rows: [{ text: '乙', then: { state: 'ok' } }] }] }), /then 要有 at/)
 })
 
 test('格子太多、擠到看不清楚時會警告', () => {
@@ -247,4 +259,19 @@ test('上下疊的零件比分到的高度還高時會警告', () => {
   // The counter beside a strip is taller than a bare strip, and it counts too.
   const withSum = (ratio) => run({ scenes: [{ id: 'x', type: 'layout', lines, data: { arrange: 'stack', ratio, parts: [{ widget: 'slots', total: 24, rows: [{ on: 24 }], sum: { label: '次' } }, { widget: 'figure', value: '1', label: '甲' }] } }] }).warnings.join('\n')
   assert.match(withSum([1, 6]), /第 1 個零件（slots）需要 117px 高/)
+})
+
+test('章節標示：每一章都有 short 時是一排名稱，否則是圓點加目前這一章的標題', () => {
+  const board = (chapters) => ({
+    chapters,
+    scenes: chapters.map((c, i) => ({ id: `s${i}`, type: 'statement', chapter: c.id, transition: 'wipe', data: { segments: [{ text: '甲' }] }, lines: [{ text: '旁白內容' }] })),
+  })
+  const named = run(board([{ id: 'a', label: 'WHY', short: '為什麼' }, { id: 'b', label: 'CAP', short: '上限' }]))
+  assert.match(named.html, /<div id="chip-1"[^>]*><span class="pill done">為什麼<\/span><i class="ln"><\/i><span class="pill cur">上限<\/span><\/div>/)
+  assert.deepEqual(named.warnings, [])
+  const dots = run(board([{ id: 'a', label: 'WHY' }, { id: 'b', label: 'CAP' }]))
+  assert.match(dots.html, /<div id="chip-1"[^>]*><i class="dot done"><\/i><span class="cur"><b>02<\/b>CAP<\/span><\/div>/)
+  const mixed = run(board([{ id: 'a', label: 'WHY', short: '為什麼' }, { id: 'b', label: 'CAP' }]))
+  assert.match(mixed.warnings.join('\n'), /只有一部分寫了 short/)
+  assert.match(mixed.html, /class="dot done"/)
 })
