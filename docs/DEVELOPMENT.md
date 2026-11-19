@@ -27,6 +27,16 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 | `... --theme blueprint` | 臨時換主題，輸出到 `out/<name>-blueprint/` |
 | `... --out <資料夾>` | 指定輸出位置，預設是目前資料夾底下的 `out/` |
 
+素材 skill 的指令在 `skill-material/` 裡執行，不需要 `npm install`。
+
+| Command | Purpose |
+|---------|---------|
+| `npm test` | 單元測試：解析、格式檢查、座標、版本比對。會在暫存資料夾建立小的 git repo，約二十五秒 |
+| `node scripts/arch-material.mjs init` | 建立素材庫（預設 `~/arch-material/`），權限只給自己 |
+| `node scripts/arch-material.mjs check <素材檔>` | 檢查格式、座標指不指得到、背景知識、機密 |
+| `node scripts/arch-material.mjs status <素材檔>` | 來源和素材記錄的版本比起來改了什麼、哪些條目要重新查證 |
+| `node scripts/arch-material.mjs stamp <素材檔>` | 印出現在的 commit 與不在版控來源的指紋，貼進素材的版本表 |
+
 ## Environment variables
 
 不需要 `.env`，也沒有金鑰。
@@ -68,7 +78,26 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 - **藍圖地圖的顏色是字串替換來的**：arch-blueprint 的圖固定用 `#faf8f4` 與 `#1a1a1a`，
   `scenes/map.mjs` 把這兩個值換成主題的顏色。arch-blueprint 若改了配色，這裡要跟著改。
 
+- **素材的座標是對著「素材記錄的 commit」檢查的**，不是對著工作區。來源多了 commit 之後 `check` 仍然會過，要看有沒有過期是 `status` 的事。
+- **commit 釘不住的來源用內容指紋比對**，兩種：不在版控裡的檔案（例如被 kit 排除的 `docs/LESSONS.md`、普通資料夾裡的東西），
+  以及被主張引用、又有還沒 commit 的修改的檔案或資料夾。指紋相同代表「整理時看過、之後沒再變」，不再算過期。
+  哪些來源要記指紋只定義在 `skill-material/lib/local.mjs` 的 `expectedPrints()`，`check`、`status`、`stamp` 都用它；改規則只改這裡。
+- **`status` 的「過期」只看素材引用到的東西。** 來源裡沒被引用的未 commit 變動列為提醒，不算過期；
+  否則使用者只要有開發到一半的修改，素材就永遠顯示過期。一手文件地圖裡的座標也不算引用（它只記「讀過」）。
+- **符號連結一律不跟過去。** 座標指到連結會報錯；資料夾的指紋把連結算成「指向哪裡」，不讀它後面的內容。
+- **`check` 只驗證座標指得到東西，不驗證主張對不對。** 第一次實跑時 `check` 全過，另一個模型回原始碼查出 13 處內容問題
+  （主旨被自己的一條事實推翻、拿舊註解當現在的原因、說過頭）。所以流程裡有一步強制交給另一個查證者（`references/verify-checklist.md`）。
+- **素材 skill 靠相對位置找到機密掃描**：`skill-material/lib/shared.mjs` 依序找 `../skill` 與 `../arch-video`。
+  兩個 skill 沒有放在同一層時 `check` 會直接報錯，不會跳過掃描。
+- **影片 skill 還沒有改成讀素材庫。** 目前 `skill/SKILL.md` 仍然走舊的流程（自己整理 `brief.md`），`skill/references/source-rules.md` 也還在；
+  這是設計規格的第二階段。
+
 ## Not verified yet
+
+- 素材 skill（2026-11-20）：單元測試之外，只在一個真實專案上由全新的代理照文件跑過步驟 1 到 7（兩個 repo 加一份介紹，17 條弧、9 份背景知識）；
+  查證那一步是主對話交給另一個模型做的，不是代理照 `SKILL.md` 自己發起的。它回報的 12 個文件問題已經補進文件，補完之後沒有再跑一次。
+- 素材 skill 的「更新」流程只有單元測試，沒有在真實專案上跑過；審核點之後「記口述、改審核日期」也還沒跑過。
+- 背景知識是代理透過網頁摘要工具讀來的，不是原始頁面；沒有人逐條對過來源網頁。
 
 - Windows 原生環境還沒跑過整條流程；體檢找 Chrome 快取的位置（`~/.cache/hyperframes/chrome`）在 Windows 上未確認，找不到時只會列為「注意」。
 - `SKILL.md` 的步驟 0 到 7 已由全新的代理在三個真實專案上跑過（小型 Python 專案、程式碼加規格文件、四個 repo 的系統並分給子代理讀）。

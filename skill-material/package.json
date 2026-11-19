@@ -1,0 +1,14 @@
+{
+  "name": "arch-material",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Organise a project's sources into sourced claims, causal arcs and background knowledge, ready for an explainer.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
