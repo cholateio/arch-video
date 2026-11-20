@@ -12,6 +12,11 @@ export default function compare(scene, ctx) {
   cards.forEach((c, k) => {
     if (!c?.title || !c.items?.length) throw new Error(`場景 ${scene.id}：${k ? 'right' : 'left'} 要有 title 與 items`)
     if (c.mood && !MOOD[c.mood]) throw new Error(`場景 ${scene.id}：mood 只能是 bad、good、plain，現在是「${c.mood}」`)
+    // A card item is a string or { text, at }. Anything else (a `sub` line copied from a list) would be dropped unseen.
+    for (const it of c.items) {
+      const extra = typeof it === 'object' && it ? Object.keys(it).filter((k) => !['text', 'at'].includes(k)) : []
+      if (extra.length) ctx.warn(`場景 ${scene.id}：對比卡片的項目只有 text 與 at，「${extra.join('、')}」不會顯示；把它併進 text 或拿掉`)
+    }
     if (c.items.length > 4) ctx.warn(`「${c.title}」有 ${c.items.length} 項，超過 4 項會太擠`)
     c.items.map(norm).forEach((it) => { if (units(it.text) > 34) ctx.warn(`「${it.text.slice(0, 10)}…」超過兩行，請縮短`) })
   })

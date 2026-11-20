@@ -131,6 +131,11 @@ test('對比的右邊卡片在講到它的那一句開始之前出現', () => {
   assert.equal(at, Math.round((tl.scenes[0].lines[1].start - CUE_LEAD) * 1000) / 1000)
 })
 
+test('對比卡片的項目寫了不支援的欄位會警告，不會默默丟掉', () => {
+  const board = { scenes: [{ id: 'x', type: 'compare', data: { left: { title: '左', items: [{ text: '一', sub: '補充' }] }, right: { title: '右', items: ['二'] } }, lines: [{ text: '旁白內容。' }] }] }
+  assert.match(run(board).warnings.join('\n'), /「sub」不會顯示/)
+})
+
 test('用 to 做出來的進場（例如檔案的標記）排在旁白講完之後也會警告', () => {
   const board = { scenes: [{ id: 'x', type: 'file', data: { path: 'a.md', lines: ['一', '二'], highlights: [{ from: 2, at: { line: 0, offset: 0.9 } }] }, lines: [{ text: '旁白內容' }] }] }
   assert.match(run(board).warnings.join('\n'), /旁白講完之後才出現/)
