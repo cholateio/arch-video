@@ -74,7 +74,7 @@ export function reasonWarnings(board) {
   const lines = board.scenes.flatMap((s) => s.lines ?? [])
   const reasons = lines.filter((l) => REASON.test(said(l))).length
   if (lines.length >= 20 && reasons < lines.length * MIN_REASON_SHARE) {
-    out.push(`旁白 ${lines.length} 句裡只有 ${reasons} 句帶有講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）：影片會變成流程與設定的報告。請照 script-rules.md 的「決定怎麼講」，補上為什麼這樣選、不這樣會怎樣`)
+    out.push(`旁白 ${lines.length} 句裡只有 ${reasons} 句帶有講原因或影響的連接詞（因為、為了、不然、這樣一來、就會…）：影片會變成流程與設定的報告。請照 script-rules.md 的「主題怎麼講」，補上為什麼這樣選、不這樣會怎樣`)
   }
   for (const s of board.scenes) {
     // A layout that shows quantities is held to the same rule as stat.
