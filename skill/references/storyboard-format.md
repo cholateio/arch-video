@@ -12,6 +12,7 @@
     "title": "arch-blueprint 元件示範",
     "voice": "zh-TW-HsiaoChenNeural",
     "theme": "night",
+    "material": "my-project",
     "properNouns": ["arch-blueprint"]
   },
   "chapters": [{ "id": "workflow", "short": "流程" }],
@@ -21,6 +22,7 @@
       "type": "statement",
       "chapter": "workflow",
       "transition": "wipe",
+      "basis": ["A3.2", "bg:github-actions#B1"],
       "data": {},
       "lines": [{ "text": "字幕顯示的句子。", "say": "實際唸出來的句子。" }]
     }
@@ -33,6 +35,7 @@
 | `meta.name` | 輸出的資料夾與檔名 |
 | `meta.voice` | 配音的聲音，預設 `zh-TW-HsiaoChenNeural` |
 | `meta.theme` | 主題，預設 `night`；另有 `blueprint` |
+| `meta.material` | 這支影片根據的素材：素材庫（`~/arch-material/`）裡的專案名稱，或素材檔的路徑（相對於分鏡檔）。見下面的「素材」。元件示範這類不講真實專案的分鏡寫 `false` |
 | `meta.properNouns` | 旁白裡可以保留英文的專有名詞。名稱裡有空格（`GitHub Actions`）就整個寫成一項 |
 | `meta.allow` | 機密掃描放行的字串，要和被擋下的內容完全相同、至少六個字。只有使用者同意公開的內容才放，例如專案對外的聯絡信箱 |
 | `chapters` | 章節清單，顯示成左上角的一排章節標示，目前這一章會亮起來。每一章寫 `short`：四個字以內的中文名稱（「為什麼」「架構」「排程」）。沒寫 `short` 時改用 `label`（英文大寫），只顯示目前這一章的名稱，其餘是圓點 |
@@ -40,7 +43,26 @@
 | `scenes[].type` | 場景元件，見下方 |
 | `scenes[].chapter` | 屬於哪一章；不寫就不顯示章節標示 |
 | `scenes[].transition` | 進場轉場：`cut`（預設）、`wipe`、`push`、`push-up`、`zoom` |
+| `scenes[].basis` | 這個場景根據素材的哪些條目，例如 `["A3.2", "F1", "D4", "bg:github-actions#B1"]`。沒有主張的場景寫 `[]` |
 | `scenes[].lines` | 旁白。`text` 是字幕；`say` 是實際唸的話，省略時等於 `text` |
+
+## 素材
+
+寫了 `meta.material` 的分鏡，`build`（包含 `--stills-only`）一開始會做兩件事：
+
+1. **確認素材可以用**：素材檔存在、通過 arch-material 的檢查、owner 審核過、沒有過期。任何一項不成立就報錯並停止。
+   來源有素材沒引用的未 commit 變動時只印出提醒。
+2. **核對每個場景的 `basis`**：
+   - 可以寫的編號：故事線 `S1`、事實 `F3`、一條弧 `A2` 或弧裡的主張 `A2.4`、節點 `N1`、資料流 `D2`、簡化 `M1`，
+     以及這份素材引用到的背景知識 `bg:主題#B1`。
+   - 編號不在素材裡：報錯。影片不可以講素材沒有的主張。
+   - 編號指到〔不明〕的主張，或〔查不到〕來源的背景：報錯。
+   - 場景沒有寫 `basis`：警告。串場、預告、標明是虛構的開場情境寫 `[]`。
+   - 超過一半的場景是 `[]`：警告，確認不是漏填。
+
+`basis` 只檢查編號存不存在，不檢查旁白是不是真的只講了那幾條；那要靠寫的人和審核的人把關。
+
+沒有寫 `meta.material` 的分鏡會警告。
 
 ## 機密掃描
 
@@ -427,7 +449,7 @@
 - **內容不是素材裡的實際紀錄時，`title` 要標明「示意」。** 列的格式照那個工具實際會顯示的東西寫，不編造它沒有的欄位。
   它是通用的外觀，不模仿任何真實產品的介面。
 - 也可以用來演一個假設的情況（「如果留著備援會怎樣」）：`title` 標明「假設」，旁白也用假設的語氣講，
-  而且那個結果要對得到大綱裡的一條事實或原因。
+  而且那個結果要對得到素材裡的一條事實或原因。
 
 ## 產出
 

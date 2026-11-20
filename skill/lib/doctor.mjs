@@ -30,6 +30,14 @@ export async function collect({ env = process.env, checkTts = true } = {}) {
     else add('fail', tool, '找不到', '安裝 ffmpeg 並加入 PATH（https://ffmpeg.org/download.html；Ubuntu 可用 sudo apt install ffmpeg）')
   }
 
+  // The content of a video comes from the material skill, which needs git to compare versions.
+  const { materialSkill } = await import('./material.mjs')
+  if (await materialSkill()) add('ok', 'arch-material', '素材 skill 在旁邊')
+  else add('fail', 'arch-material', '找不到素材 skill', '把 arch-material skill 放在 arch-video 旁邊（同一個資料夾底下）；影片的內容一律來自它整理的素材')
+  const git = spawnSync('git', ['--version'], { encoding: 'utf8' })
+  if (git.status === 0) add('ok', 'git', git.stdout.trim())
+  else add('fail', 'git', '找不到', '安裝 git 並加入 PATH；確認素材有沒有過期時要用它比對版本')
+
   // `hyperframes browser path` downloads Chrome as a side effect, so look at the env var and the cache directory instead.
   const custom = env.HYPERFRAMES_BROWSER_PATH
   const cache = path.join(os.homedir(), '.cache', 'hyperframes', 'chrome')

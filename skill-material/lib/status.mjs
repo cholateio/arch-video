@@ -58,9 +58,10 @@ export function status(file, options = {}) {
       else r.other.push(f)
     }
     const referenced = new Set(claims.filter((u) => u.coord.repo === row.code).map((u) => u.coord.path))
-    const hit = new Set(r.touched.map((f) => f.from ?? f.path))
-    if (referenced.size >= REBUILD_MIN_FILES && hit.size / referenced.size >= REBUILD_SHARE) {
-      out.rebuild.push(`來源 ${row.code} 被素材引用的 ${referenced.size} 個檔案裡有 ${hit.size} 個變了，逐條查證不會比重新整理省事`)
+    // Counted per referenced place: a folder coordinate is one reference, however many files under it changed.
+    const hit = [...referenced].filter((p) => r.touched.some((f) => under(p)(f.path) || (f.from != null && under(p)(f.from))))
+    if (referenced.size >= REBUILD_MIN_FILES && hit.length / referenced.size >= REBUILD_SHARE) {
+      out.rebuild.push(`來源 ${row.code} 被素材引用的 ${referenced.size} 個位置裡有 ${hit.length} 個變了，逐條查證不會比重新整理省事`)
     }
   }
 
@@ -115,5 +116,9 @@ export function stamp(file, options = {}) {
   for (const [key, want] of prints) if (want.kind === 'missing') prints.delete(key)
   const lines = ['| 代號 | 位置 | commit | 日期 |', '|---|---|---|---|', ...rows]
   if (prints.size) lines.push('', '| 不在 commit 裡的來源 | 指紋 |', '|---|---|', ...[...prints].sort().map(([k, v]) => `| \`${k}\` | ${v.print} |`))
-  return { text: lines.join('\n'), missing }
+  // Stamping records whatever is checked out now. When that is not the version the claims were checked against,
+  // the caller has to hear about it: the new table would vouch for commits nobody has read.
+  const moved = m.repos.filter((row) => /^[0-9a-f]{7,40}$/.test(row.commit) && repos[row.code].isGit && !repos[row.code].atHead)
+    .map((row) => ({ code: row.code, from: row.commit, to: repos[row.code].head }))
+  return { text: lines.join('\n'), missing, moved }
 }

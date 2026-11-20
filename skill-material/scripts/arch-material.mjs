@@ -88,6 +88,7 @@ async function main() {
     const { stamp } = await import('../lib/status.mjs')
     const r = stamp(need(args._[0]), { repos: args.repos })
     console.log(r.text)
+    for (const v of r.moved) console.error(`\n注意：${v.code} 的版本會從 ${v.from} 換成 ${v.to}。stamp 只記下現在的版本，不替你查證：先跑 status，把這段期間變動到的條目查證完，再貼上這張表。`)
     if (r.missing.length) { console.error(`\n找不到這些來源的資料夾：${r.missing.join('、')}`); return 1 }
     return 0
   }

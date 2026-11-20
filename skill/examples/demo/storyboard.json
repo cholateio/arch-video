@@ -1,6 +1,7 @@
 {
   "meta": {
     "name": "demo",
+    "material": false,
     "title": "arch-blueprint 元件示範",
     "voice": "zh-TW-HsiaoChenNeural",
     "properNouns": [

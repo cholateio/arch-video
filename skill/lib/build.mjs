@@ -10,6 +10,7 @@ import { compose } from './compose.mjs'
 import { hf, ffmpeg } from './render.mjs'
 import { ROOT } from './util.mjs'
 import { scanBoard, mask } from './secrets.mjs'
+import { gate, materialFile, basisProblems } from './material.mjs'
 
 // The video is driven by the need and the architecture diagram; raw excerpts are only evidence.
 // Short boards (component demos, clips) are exempt.
@@ -134,6 +135,21 @@ export async function build(file, flags) {
     ids.add(s.id)
     // Checked here, not only when the timeline is built: a typo should fail before any narration is synthesised.
     if (!((s.transition ?? 'cut') in LEAD)) throw new Error(`場景 ${s.id}：不認得的轉場「${s.transition}」`)
+  }
+
+  // Where the content comes from. A name or path is the material the video is made from; `false` marks a board that
+  // explains no real project (the component demo). Anything else is questioned, because the rule has no exception.
+  const ref = board.meta?.material
+  if (typeof ref === 'string' && ref) {
+    const g = await gate(materialFile(ref, baseDir))
+    if (!g.ok) throw new Error(`素材還不能用來做影片，已停止：\n${g.stops.map((s) => `  - ${s}`).join('\n')}\n先用 arch-material skill 整理或更新素材，再回來。`)
+    step(`素材：${g.file}（審核 ${g.material.review}）`)
+    for (const n of g.notes) console.log(`  ${n}`)
+    const basis = basisProblems(board, g.entries)
+    if (basis.errors.length) throw new Error(`分鏡講到素材裡沒有、或不能講的內容：\n${basis.errors.map((s) => `  - ${s}`).join('\n')}`)
+    basis.warnings.forEach(warn)
+  } else if (ref !== false) {
+    warn('分鏡沒有寫 meta.material：正式的影片要寫上素材庫裡的專案名稱，build 才會確認素材審核過、沒有過期，並核對每個場景的 basis。元件示範這類不講真實專案的分鏡寫 false')
   }
 
   balanceWarnings(board).forEach(warn)
