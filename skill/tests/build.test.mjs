@@ -1,7 +1,7 @@
 // Storyboard-level checks that need no narration or rendering.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { balanceWarnings, englishWords, pictureWarnings, reasonWarnings, voiceProblem } from '../lib/build.mjs'
+import { balanceWarnings, englishWords, pictureWarnings, reasonWarnings, termWarnings, voiceProblem, shotScenes } from '../lib/build.mjs'
 
 const board = (...types) => ({ scenes: types.map((type, i) => ({ id: `s${i}`, type })) })
 
@@ -61,4 +61,39 @@ test('專有名詞不論列出的順序，較長的名稱都會整個被認出�
   assert.deepEqual(englishWords('跑在 GitHub Actions 上，用 cron 觸發。', ['GitHub', 'GitHub Actions']), ['cron'])
   assert.deepEqual(englishWords('跑在 GitHub Actions 上。', ['GitHub Actions', 'GitHub']), [])
   assert.deepEqual(englishWords('讀 docs/README.md。', []), ['docs/README.md'])
+})
+
+const said = (terms, ...scenes) => ({ meta: { terms }, scenes: scenes.map((lines, i) => ({ id: `s${i + 1}`, lines: lines.map((text) => ({ text })) })) })
+
+test('專有名詞：第一次唸到要有介紹，之後改說代稱；列進 again 的場景可以再說名字', () => {
+  const terms = { RSS: { intro: '訂閱格式', plain: '訂閱', again: ['s3'] } }
+  assert.deepEqual(termWarnings(said(terms, ['每個帳號都有 RSS，', '一種讓閱讀器自動收到新文章的訂閱格式。'], ['讀這份訂閱。'], ['最後再說一次 RSS。'])), [])
+  const w = termWarnings(said(terms, ['每個帳號都有 RSS。'], ['讀這份 RSS。']))
+  assert.match(w.join('\n'), /第一次唸到是在場景 s1 第 1 句/)
+  assert.match(w.join('\n'), /又唸了 1 次（s2）：改說代稱「訂閱」/)
+})
+
+test('專有名詞：沒寫進 meta.terms 會警告；known 不檢查；字幕保留名字、唸法換成代稱不算重複', () => {
+  assert.match(termWarnings({ meta: { properNouns: ['Supabase'] }, scenes: [{ id: 'a', lines: [{ text: '存進 Supabase。' }] }] }).join(), /meta\.terms 卻沒有它/)
+  assert.deepEqual(termWarnings(said({ YouTube: { known: true } }, ['YouTube 的頻道。'], ['YouTube 的影片。'])), [])
+  const board = { meta: { terms: { Supabase: { intro: '雲端的資料庫服務', plain: '資料庫' } } }, scenes: [
+    { id: 'a', lines: [{ text: 'Supabase，一個雲端的資料庫服務。' }] },
+    { id: 'b', lines: [{ text: '寫進 Supabase。', say: '寫進資料庫。' }] },
+  ] }
+  assert.deepEqual(termWarnings(board), [])
+})
+
+test('專有名詞：較長的名字整個算一個，不會連帶算成較短的；兩個名字用同一個代稱會警告', () => {
+  const terms = { 'GitHub Actions': { intro: '排程與執行工作的服務', plain: '工作流程' }, GitHub: { known: true } }
+  assert.deepEqual(termWarnings(said(terms, ['GitHub Actions，GitHub 上排程與執行工作的服務。'])), [])
+  assert.match(termWarnings(said({ A: { intro: '甲', plain: '它' }, B: { intro: '乙', plain: '它' } }, ['A 是甲'])).join(), /代稱都是「它」/)
+})
+
+test('專有名詞：介紹的那一句裡又唸一次名字也算重複', () => {
+  const w = termWarnings(said({ RSS: { intro: '訂閱格式', plain: '訂閱' } }, ['RSS 是一種訂閱格式；RSS 接著被讀取。']))
+  assert.match(w.join(), /又唸了 1 次（s1）/)
+})
+
+test('分鏡裡有哪些截圖場景：沒寫 meta.material 時 build 用它來停止', () => {
+  assert.deepEqual(shotScenes({ scenes: [{ id: 'a', type: 'shot' }, { id: 'b', type: 'title' }] }), ['a'])
 })

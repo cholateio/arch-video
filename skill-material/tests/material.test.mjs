@@ -8,6 +8,7 @@ import { check } from '../lib/check.mjs'
 import { status, stamp } from '../lib/status.mjs'
 import { fingerprint, isCredential } from '../lib/repo.mjs'
 import { fixture, git, write, LESSONS, BACKGROUND } from './fixture.mjs'
+import { parseShotArgs, fontDirs, pngSize, mobileAgent } from '../lib/shot.mjs'
 
 const TODAY = new Date('2026-11-21T00:00:00Z')
 const run = (f) => check(f.file, { today: TODAY })
@@ -454,4 +455,30 @@ test('已經 commit 的符號連結、以及路徑中間經過連結的檔案，
   g.edit('\n| 不在 commit 裡的來源 | 指紋 |', `| notes | ${notes} | 無 | 2026-11-20 |\n\n| 不在 commit 裡的來源 | 指紋 |`)
   g.edit('- **F1** 來源有兩個。', '- **F2** 作者講過一場。 〔有出處〕 `notes:shortcut/a.md`\n- **F1** 來源有兩個。')
   has((await run(g)).errors, /notes:shortcut\/a\.md」是符號連結/)
+})
+
+test('截圖指令：選項照寫的順序變成步驟；網址、輸出檔與數值寫錯會報錯', () => {
+  const o = parseShotArgs(['https://example.com/?v=reader', 'out/a.png', '--size', '390x844', '--scale', '2', '--click', '.menu', '--pause', '500', '--hide', 'header', '--element', '#post'])
+  assert.deepEqual([o.width, o.height, o.scale, o.element], [390, 844, 2, '#post'])
+  assert.deepEqual(o.steps, [{ click: '.menu' }, { pause: 500 }, { hide: 'header' }])
+  assert.throws(() => parseShotArgs(['example.com', 'a.png']), /http/)
+  assert.throws(() => parseShotArgs(['https://example.com', 'a.jpg']), /\.png/)
+  assert.throws(() => parseShotArgs(['https://example.com', 'a.png', '--size', '390']), /寬/)
+  assert.throws(() => parseShotArgs(['https://example.com', 'a.png', '--click']), /要接值/)
+  assert.throws(() => parseShotArgs(['https://example.com', 'a.png', '--nope']), /不認得/)
+})
+
+test('截圖指令：Linux 才補字型資料夾，WSL 加上 Windows 的字型；PNG 的尺寸從檔頭讀', () => {
+  const has = (...ok) => (p) => ok.includes(p)
+  assert.deepEqual(fontDirs({}, 'win32', has('/mnt/c/Windows/Fonts')), [])
+  assert.deepEqual(fontDirs({ ARCH_MATERIAL_FONT_DIRS: '/a' + path.delimiter + '/b' }, 'linux', has('/a', '/mnt/c/Windows/Fonts')), ['/a', '/mnt/c/Windows/Fonts'])
+  const head = Buffer.alloc(24)
+  Buffer.from([0x89, 0x50, 0x4e, 0x47]).copy(head, 0); head.write('IHDR', 12, 'ascii'); head.writeUInt32BE(780, 16); head.writeUInt32BE(1688, 20)
+  assert.deepEqual(pngSize(head), { width: 780, height: 1688 })
+  assert.equal(pngSize(Buffer.from('not a png at all, really not')), null)
+})
+
+test('截圖指令：手機版換成手機的 User-Agent，保留 Chrome 的版本', () => {
+  const ua = mobileAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36')
+  assert.equal(ua, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Mobile Safari/537.36')
 })

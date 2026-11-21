@@ -46,6 +46,7 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 |----------|---------|
 | `HTTPS_PROXY` | 選填。配音連線要經過代理伺服器時設定 |
 | `HYPERFRAMES_BROWSER_PATH` | 選填。指定已安裝的 Chrome 執行檔，HyperFrames 就不會自己下載 |
+| `ARCH_MATERIAL_FONT_DIRS` | 選填。`arch-material shot` 截圖時另外加給 Chrome 的字型資料夾（多個用路徑分隔字元隔開）。Linux 常缺彩色表情符號的字型，截出來會變成方塊；WSL 會自動加上 Windows 的字型 |
 
 ## Easy to forget
 

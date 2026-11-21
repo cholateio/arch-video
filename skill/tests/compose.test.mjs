@@ -10,6 +10,21 @@ import theme from '../themes/night.mjs'
 import scenes from '../scenes/index.mjs'
 import widgets from '../widgets/index.mjs'
 import { ROOT } from '../lib/util.mjs'
+import zlib from 'node:zlib'
+
+// A real (blank) PNG of the given size, written once per test run.
+function png(w, h) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0 })
+  const crc = (b) => { let c = 0xffffffff; for (const x of b) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]) }
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0
+  const raw = Buffer.alloc((w + 1) * h)
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-png-')), `${w}x${h}.png`)
+  fs.writeFileSync(file, Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]))
+  return file
+}
+const PHONE_PNG = png(700, 1800)
+const WIDE_PNG = png(1440, 900)
 
 // One word per character, 200ms each, so any substring of a line works as a cue.
 const speak = (text) => {
@@ -39,6 +54,7 @@ const samples = {
   tree: { root: 'x/', items: [{ name: 'a/' }, { name: 'b.py', depth: 2, note: '說明', at: '旁白' }] },
   cycle: { center: '中心', steps: [{ icon: 'eye', label: '一' }, { icon: 'wrench', label: '二' }, { icon: 'check', label: '三' }] },
   terminal: { lines: [{ type: 'cmd', text: 'ls -la' }, { type: 'ok', text: 'done', at: '為止' }] },
+  shot: { file: PHONE_PNG, marks: [{ at: '旁白', box: [100, 800, 500, 300], note: '譯文', zoom: 1.2 }] },
   layout: { title: '標題', parts: [{ widget: 'units', total: 20, group: 10, head: '左', mood: 'good', steps: [{ take: 10, at: '旁白' }], left: { label: '剩下' }, tally: { label: '輪' }, foot: '註' }, { widget: 'figure', value: '10', label: '上限' }] },
 }
 
@@ -279,4 +295,28 @@ test('章節標示：每一章都有 short 時是一排名稱，否則是圓點�
   const mixed = run(board([{ id: 'a', label: 'WHY', short: '為什麼' }, { id: 'b', label: 'CAP' }]))
   assert.match(mixed.warnings.join('\n'), /只有一部分寫了 short/)
   assert.match(mixed.html, /class="dot done"/)
+})
+
+test('截圖：直的放進手機外框、橫的放進瀏覽器視窗；檔案複製進專案，框跟著觸發點出現', () => {
+  const board = { scenes: [
+    { id: 'a', type: 'shot', data: { file: PHONE_PNG, marks: [{ at: '原文', box: [0, 0, 700, 400], note: '原文' }, { at: '譯文', box: [0, 1400, 700, 400], note: '譯文' }] }, lines: [{ text: '先看原文。' }, { text: '再看譯文。' }] },
+    { id: 'b', type: 'shot', data: { file: WIDE_PNG, url: 'example.com' }, lines: [{ text: '整個網頁。' }] },
+  ] }
+  const { html, warnings } = run(board)
+  assert.match(html, /class="dev phone"/)
+  assert.match(html, /class="dev browser"[\s\S]*example\.com/)
+  assert.match(html, /src="assets\/a-0\.png"/)
+  assert.ok(html.includes('["from","#a .b1"'), '第二個框沒有動畫')
+  // the second mark sits at the bottom of a tall capture, so the view pans down to it
+  const pans = [...html.matchAll(/\["to","#a \.pan",\{"x":[^,]*,"y":(-?[\d.]+)/g)].map((m) => Number(m[1]))
+  assert.equal(pans.length, 2)
+  assert.ok(pans[1] < pans[0], '沒有往下捲到第二個框')
+  assert.deepEqual(warnings, [])
+})
+
+test('截圖：放大到框超出畫面時改小並警告；框超出截圖、素材座標沒有經過 build 解析都會報錯', () => {
+  const wide = one('shot', { file: PHONE_PNG, marks: [{ at: '旁白', box: [0, 0, 700, 300], zoom: 2 }] })
+  assert.match(run(wide).warnings.join('\n'), /zoom 2 會讓框超出畫面/)
+  assert.throws(() => run(one('shot', { file: PHONE_PNG, marks: [{ at: '旁白', box: [0, 1700, 700, 300] }] })), /超出截圖/)
+  assert.throws(() => run(one('shot', { image: 'data:screens/a.png' })), /meta\.material/)
 })

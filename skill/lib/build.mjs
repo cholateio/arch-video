@@ -10,7 +10,7 @@ import { compose } from './compose.mjs'
 import { hf, ffmpeg } from './render.mjs'
 import { ROOT } from './util.mjs'
 import { scanBoard, mask } from './secrets.mjs'
-import { gate, materialFile, basisProblems } from './material.mjs'
+import { gate, materialFile, basisProblems, shotFiles } from './material.mjs'
 
 // The video is driven by the need and the architecture diagram; raw excerpts are only evidence.
 // Short boards (component demos, clips) are exempt.
@@ -36,6 +36,52 @@ export function englishWords(text, proper = []) {
   for (const p of [...proper].sort((a, b) => b.length - a.length)) rest = rest.replaceAll(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
   return (rest.match(/[A-Za-z][A-Za-z0-9_.\-/]*/g) ?? []).map((w) => w.replace(/[.\-/]+$/, ''))
 }
+
+// A name the audience may not know is introduced the first time it is spoken and replaced by a plain word after
+// that; repeating it every sentence loses the viewer just as much as never explaining it. Only `say` counts: the
+// subtitle may keep the name. `meta.terms`: { "Supabase": { intro, plain, again?: [scene ids] } | { known: true } }.
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export function termWarnings(board) {
+  const terms = board.meta?.terms ?? {}
+  const names = [...new Set([...(board.meta?.properNouns ?? []), ...Object.keys(terms)])].sort((a, b) => b.length - a.length)
+  const pattern = (n) => new RegExp(`(?<![A-Za-z0-9])${escapeRe(n)}(?![A-Za-z0-9])`, 'gi')
+  const lines = board.scenes.flatMap((s) => (s.lines ?? []).map((l, j) => ({ scene: s.id, j, said: l.say ?? l.text ?? '' })))
+  for (const l of lines) {
+    // Longest first, and each match is taken out, so "GitHub Actions" does not also count as "GitHub".
+    let rest = l.said
+    l.names = new Map()
+    for (const n of names) {
+      const count = rest.match(pattern(n))?.length ?? 0
+      if (count) { l.names.set(n, count); rest = rest.replace(pattern(n), ' ') }
+    }
+  }
+  const out = []
+  for (const n of names) {
+    const hits = lines.filter((l) => l.names.has(n))
+    if (!hits.length) continue
+    const t = terms[n]
+    if (!t) { out.push(`旁白唸到「${n}」，meta.terms 卻沒有它：寫上第一次出現時的介紹（intro）與之後的代稱（plain）；大家都認得的名字寫 { "known": true }`); continue }
+    if (t.known) continue
+    if (!t.intro || !t.plain) { out.push(`meta.terms 的「${n}」要有 intro 與 plain，或寫 "known": true`); continue }
+    const first = hits[0]
+    const next = lines[lines.indexOf(first) + 1]
+    const near = first.said + (next?.scene === first.scene ? next.said : '')
+    if (!near.includes(t.intro)) out.push(`「${n}」第一次唸到是在場景 ${first.scene} 第 ${first.j + 1} 句，這一句和下一句都沒有它的介紹「${t.intro}」：第一次出現就要用白話說它是什麼`)
+    const again = new Set(t.again ?? [])
+    // Every occurrence after the first counts, including a second one inside the introducing line.
+    const extra = hits.flatMap((l, k) => Array(l.names.get(n) - (k === 0 ? 1 : 0)).fill(l)).filter((l) => !again.has(l.scene))
+    if (extra.length) out.push(`「${n}」介紹過之後又唸了 ${extra.length} 次（${[...new Set(extra.map((l) => l.scene))].join('、')}）：改說代稱「${t.plain}」；要和別的東西對比、或換一章重新提起時，才把那個場景列進 again`)
+  }
+  const plains = new Map()
+  for (const [n, t] of Object.entries(terms)) {
+    if (!t.plain) continue
+    if (plains.has(t.plain)) out.push(`「${plains.get(t.plain)}」和「${n}」的代稱都是「${t.plain}」：觀眾分不出指的是哪一個`)
+    else plains.set(t.plain, n)
+  }
+  return out
+}
+
+export const shotScenes = (board) => board.scenes.filter((s) => s.type === 'shot').map((s) => s.id)
 
 // Scenes that only arrange words and numbers. A video made mostly of them is a slide deck read aloud.
 const TEXT_SCENES = ['statement', 'compare', 'list', 'stat']
@@ -146,18 +192,24 @@ export async function build(file, flags) {
     step(`素材：${g.file}（審核 ${g.material.review}）`)
     for (const n of g.notes) console.log(`  ${n}`)
     const basis = basisProblems(board, g.entries)
+    basis.errors.push(...shotFiles(board, g.material))
     if (basis.errors.length) throw new Error(`分鏡講到素材裡沒有、或不能講的內容：\n${basis.errors.map((s) => `  - ${s}`).join('\n')}`)
     basis.warnings.forEach(warn)
   } else if (ref !== false) {
+    // Pixels escape the secret scan, so a screenshot is only trusted through the material (or in a component demo).
+    const shots = shotScenes(board)
+    if (shots.length) throw new Error(`這些場景放了截圖，分鏡卻沒有寫 meta.material：${shots.join('、')}。截圖要由素材登記、owner 看過才能用；只有元件示範（meta.material 寫 false）可以用相對路徑的圖`)
     warn('分鏡沒有寫 meta.material：正式的影片要寫上素材庫裡的專案名稱，build 才會確認素材審核過、沒有過期，並核對每個場景的 basis。元件示範這類不講真實專案的分鏡寫 false')
   }
 
   balanceWarnings(board).forEach(warn)
   reasonWarnings(board).forEach(warn)
   pictureWarnings(board).forEach(warn)
+  // A component demo names its own parts; everything else explains a real project to people who have not seen it.
+  if (ref !== false) termWarnings(board).forEach(warn)
 
   // Narration rule: only proper nouns stay in English. Other English words need a Chinese reading in `say`; the subtitle `text` may keep the original.
-  const proper = board.meta?.properNouns ?? []
+  const proper = [...(board.meta?.properNouns ?? []), ...Object.keys(board.meta?.terms ?? {})]
   for (const s of board.scenes) {
     for (const [j, line] of (s.lines ?? []).entries()) {
       // Long tokens are masked: a credential the scan missed must not be echoed into the log by this warning.

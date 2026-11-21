@@ -65,6 +65,31 @@ export async function gate(file, { today, skill } = {}) {
   return out
 }
 
+// A screenshot is evidence like any other: it has to be a file the material registered (a claim of the scene's basis
+// cites it as a coordinate), so the owner has seen it and its fingerprint tells when it went stale. The secret scan
+// cannot read pixels, which is why there is no way around the material for images.
+const IMAGE_COORD = /^([a-z][a-z0-9-]*):([^#:]+\.png)$/
+export function shotFiles(board, material) {
+  const errors = []
+  const cites = new Map(material.items.map((it) => [it.id, new Set(it.coords.map((c) => c.raw.trim()))]))
+  const dirs = new Map(material.repos.map((r) => [r.code, path.resolve(r.location.replace(/^~(?=[\\/])/, os.homedir()))]))
+  for (const s of board.scenes ?? []) {
+    if (s.type !== 'shot') continue
+    const image = s.data?.image
+    const m = IMAGE_COORD.exec(image ?? '')
+    if (!m) { errors.push(`場景 ${s.id}：image 要寫成素材的座標，例如 "data:screens/reader.png"（只收 PNG）`); continue }
+    if (!(s.basis ?? []).some((id) => cites.get(id)?.has(image))) {
+      errors.push(`場景 ${s.id}：截圖「${image}」要由這個場景 basis 裡的一條素材主張引用（座標寫著它）。截圖只能用素材登記過、owner 看過的`)
+      continue
+    }
+    const dir = dirs.get(m[1])
+    const file = dir && path.join(dir, m[2])
+    if (!file || !fs.existsSync(file)) { errors.push(`場景 ${s.id}：找不到截圖「${image}」（${file ?? `素材沒有「${m[1]}」這個來源`}）`); continue }
+    s.data.file = file
+  }
+  return errors
+}
+
 // The claims of a video are closed: every scene lists the material entries it rests on in `basis`, and an empty list
 // marks a scene that claims nothing (a bridge, a preview, a made-up opening example).
 export function basisProblems(board, entries) {

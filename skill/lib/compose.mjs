@@ -53,6 +53,7 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   const W = theme.frame.width
   const H = theme.frame.height
   let wipes = 0
+  let assets = 0
   const anims = []
   const inits = []
   const body = []
@@ -78,6 +79,13 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
       fromTo: (sel, a, b, t) => anims.push(['fromTo', scope(sel), a, b, check(t, sel)]),
       // A component calls this when its picture is complete from the first frame (a diagram shown without drawing in).
       present: () => { present = true },
+      // Copies a file into the project and returns the path the page uses: rendering must not reach outside it.
+      asset: (file) => {
+        fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true })
+        const name = `${s.id}-${assets++}${path.extname(file)}`
+        fs.copyFileSync(file, path.join(buildDir, 'assets', name))
+        return `assets/${name}`
+      },
     }
     let present = false
     const before = anims.length

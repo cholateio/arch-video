@@ -6,7 +6,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { gate, basisProblems, materialFile, workDir } from '../lib/material.mjs'
+import { gate, basisProblems, materialFile, workDir, shotFiles } from '../lib/material.mjs'
 
 // The material skill is a sibling folder: skill-material/ in the repo, arch-material/ when installed.
 const sibling = ['../../skill-material/tests/fixture.mjs', '../../arch-material/tests/fixture.mjs']
@@ -86,4 +86,19 @@ test('meta.material 可以是專案名稱或素材檔的路徑；工作資料夾
   assert.equal(materialFile('../lib/proj.md', '/work/video'), path.resolve('/work/lib/proj.md'))
   assert.equal(materialFile('~/elsewhere/proj.md', '/work'), path.join(os.homedir(), 'elsewhere', 'proj.md'))
   assert.equal(workDir('/lib/proj.md'), path.join('/lib', 'video', 'proj'))
+})
+
+test('截圖只能用素材登記過的：basis 裡要有一條主張引用它，檔案要在那個來源裡', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-shots-'))
+  fs.mkdirSync(path.join(dir, 'screens'))
+  fs.writeFileSync(path.join(dir, 'screens', 'a.png'), '')
+  const material = { repos: [{ code: 'data', location: dir }], items: [{ id: 'F1', coords: [{ raw: 'data:screens/a.png' }] }, { id: 'F2', coords: [] }] }
+  const scene = (image, basis) => ({ id: 'x', type: 'shot', basis, data: { image } })
+  const ok = { scenes: [scene('data:screens/a.png', ['F1'])] }
+  assert.deepEqual(shotFiles(ok, material), [])
+  assert.equal(ok.scenes[0].data.file, path.join(dir, 'screens', 'a.png'))
+  assert.match(shotFiles({ scenes: [scene('data:screens/a.png', ['F2'])] }, material).join(), /basis 裡的一條素材主張引用/)
+  assert.match(shotFiles({ scenes: [scene('data:screens/b.png', ['F1'])] }, { ...material, items: [{ id: 'F1', coords: [{ raw: 'data:screens/b.png' }] }] }).join(), /找不到截圖/)
+  assert.match(shotFiles({ scenes: [scene('screens/a.png', ['F1'])] }, material).join(), /素材的座標/)
+  assert.match(shotFiles({ scenes: [scene('data:screens/a.jpg', ['F1'])] }, material).join(), /只收 PNG/)
 })

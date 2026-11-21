@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Entry point: init, check, status, stamp. No dependencies beyond Node and git.
+// Entry point: init, check, status, stamp, shot. No dependencies beyond Node and git; shot also needs the headless
+// Chrome that HyperFrames downloads.
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -9,6 +10,13 @@ const USAGE = `用法：
   arch-material check <素材檔>           檢查格式、座標、背景知識與機密
   arch-material status <素材檔>          素材記錄的版本和來源現在的版本比起來，哪些條目受影響
   arch-material stamp <素材檔>           印出「整理時的版本」要填的表格
+  arch-material shot <網址> <輸出.png>   用無頭 Chrome 截一張畫面當實例（全新的設定檔，不登入、不帶 cookie）
+      --size 390x844      視窗大小（預設 1440x900；寬度小於 820 時當成手機）
+      --scale 2           像素密度（預設 1）
+      --wait 4000         載入後先等幾毫秒（預設 4000）
+      --click <選擇器>    點一下；--scroll <選擇器> 捲到它；--hide <選擇器> 把它藏起來（例如蓋住內容的頁首）；
+                          --pause <毫秒> 再等一下。照寫的順序執行
+      --element <選擇器>  只截這個元素；沒寫就截整個視窗
 
   --repo <代號>=<路徑>                   來源不在素材記錄的位置時（例如換了電腦）指定它在哪`
 
@@ -34,6 +42,12 @@ const list = (title, items) => { if (items.length) console.log(`\n${title}\n${it
 
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2)
+  if (cmd === 'shot') {
+    const { parseShotArgs, shoot } = await import('../lib/shot.mjs')
+    const r = await shoot(parseShotArgs(rest), { log: (m) => console.log(`  ${m}`) })
+    console.log(`已存：${r.file}（${r.width}x${r.height}）\n截圖讀不到文字，機密掃描查不到圖上的內容：每一張都要在審核點給 owner 看過。`)
+    return 0
+  }
   const args = parse(rest)
   if (cmd === 'init') {
     const dir = path.resolve(args._[0] ?? path.join(os.homedir(), 'arch-material'))
