@@ -279,7 +279,7 @@ export async function build(file, flags) {
   console.log(`  總長 ${tl.total} 秒，${tl.scenes.length} 個場景，${animations} 個動畫`)
   for (const s of tl.scenes) console.log(`  ${String(s.start.toFixed(1)).padStart(6)}s  ${s.id.padEnd(12)} ${s.type.padEnd(10)} ${s.transition}`)
   const length = lengthReport(board, tl)
-  if (length.rows.length) console.log(`  各章（實際／目標）：${length.rows.map((r) => r.text).join('、')}`)
+  if (length.rows.length) console.log(`  各章${length.rows.some((r) => r.target != null) ? '（實際／目標）' : ''}：${length.rows.map((r) => r.text).join('、')}`)
   length.warnings.forEach(warn)
 
   step('檢查')

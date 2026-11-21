@@ -3,7 +3,7 @@
 
 ## Project goal
 
-把一個 repo 變成有旁白、字幕、章節的技術架構解說影片的 Claude Code skill，給想向其他工程師介紹專案架構的人用。
+把一個 repo 變成有旁白、字幕的技術架構解說影片的 Claude Code skill，給想向其他工程師介紹專案架構的人用。
 repo 裡有兩個 skill：`arch-material` 把專案整理成帶出處的素材，`arch-video` 把素材做成影片。影片的內容一律來自審核過的素材。
 權威需求：`docs/specs/2026-11-19-arch-video-design.md`、`docs/specs/2026-11-19-material-skill-design.md`。
 
@@ -26,14 +26,13 @@ repo 裡有兩個 skill：`arch-material` 把專案整理成帶出處的素材�
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式
   - `skill/references/` — 編排、寫腳本與分鏡的規則：`treatment-format.md`、`script-rules.md`、`storyboard-format.md`、`review-checklist.md`
   - `skill/examples/demo/` — 示範分鏡與它用到的藍圖（跑測試與調整版面用）
-  - `skill/examples/arch-blueprint/` — 第一支正式影片的分鏡與架構圖
-  - `skill/tests/` — 單元測試（不連網、不渲染；素材那一組會在暫存資料夾建立小的 git repo）
+  - `skill/tests/` — 單元測試（不連網、不渲染；素材那一組會在暫存資料夾建立小的 git repo）。暫存資料夾一律經 `tests/tmp.mjs` 的 `tempDir()` 建立，測試結束時整個刪掉
 - `skill-material/` — 整理素材的 skill。沒有相依套件，只需要 Node.js 與 git（截圖另外用 HyperFrames 下載的無頭 Chrome）。兩個 skill 互相用對方的程式（素材 skill 用 `skill/lib/secrets.mjs` 掃描機密，影片 skill 用素材 skill 的檢查），所以要放在同一個資料夾底下
   - `skill-material/SKILL.md` — 給 Claude 的工作流程：清點、文件地圖、主旨與故事線、因果弧、上網查背景、架構拆解、審核點、更新
   - `skill-material/scripts/arch-material.mjs` — 指令進入點：`init`、`check <素材檔>`、`status <素材檔>`、`stamp <素材檔>`、`shot <網址> <輸出.png>`（截實際畫面當實例）
   - `skill-material/lib/` — `material`（解析素材檔與背景知識）、`repo`（唯讀地讀來源 repo）、`check`（格式、座標、機密）、`status`（和來源現在的版本比對）、`local`（哪些來源要記指紋，三個指令共用）、`shared`（找到影片 skill 的機密掃描）、`shot`（經 DevTools 協定驅動無頭 Chrome 截圖，不登入）
   - `skill-material/references/` — `source-rules.md`（怎麼讀、以誰為準、機密、上網查背景）、`material-format.md`（素材檔的格式）、`verify-checklist.md`（給查證者的清單）
-  - `skill-material/tests/` — 單元測試（在暫存資料夾建立小的 git repo，不連網）；`fixture.mjs` 是範本素材，影片 skill 的測試也用它
+  - `skill-material/tests/` — 單元測試（在暫存資料夾建立小的 git repo，不連網，同樣經 `tests/tmp.mjs` 建立並在結束時刪掉）；`fixture.mjs` 是範本素材，影片 skill 的測試也用它
 - `docs/specs/` — 需求與設計決定，是「要做什麼」的依據
 - `docs/DEVELOPMENT.md` — 指令、注意事項
 - `materials/` — 參考影片，他人作品，不進版控

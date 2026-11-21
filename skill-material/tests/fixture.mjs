@@ -3,9 +3,9 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { fingerprint } from '../lib/repo.mjs'
+import { tempDir } from './tmp.mjs'
 
 export const git = (dir, ...args) => execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=noreply@example.com', ...args], { encoding: 'utf8' }).trim()
 export const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text) }
@@ -20,7 +20,7 @@ export const BACKGROUND = `# 代管的排程服務
 `
 
 export function fixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-material-'))
+  const root = tempDir('material-')
   const repo = path.join(root, 'proj')
   const library = path.join(root, 'library')
   write(path.join(repo, 'src/fetch.mjs'), 'export const SOURCES = ["a", "b"]\n// One run never sends more than this.\nexport const LIMIT = 10\n')

@@ -2,11 +2,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { synth, resetBreaker } from '../lib/tts.mjs'
+import { tempDir } from './tmp.mjs'
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-tts-'))
+const tmp = () => tempDir('tts-')
 
 test('配音服務連不上時，連續兩句失敗後就不再嘗試', async () => {
   resetBreaker()

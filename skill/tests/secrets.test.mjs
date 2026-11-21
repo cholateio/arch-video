@@ -2,9 +2,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { scanText, scanBoard, checkAllow } from '../lib/secrets.mjs'
+import { tempDir } from './tmp.mjs'
 
 const fake = {
   github: `gh${'p_'}${'A1b2C3d4E5'.repeat(4)}`,
@@ -108,7 +108,7 @@ test('allow 要和找到的內容完全相同：片段、標點或太短的項�
 })
 
 test('分鏡的畫面、旁白與架構圖裡的文字都會掃', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-secrets-'))
+  const dir = tempDir('secrets-')
   fs.writeFileSync(path.join(dir, 'map.svg'), '<svg><g class="node"><text>db.corp.internal</text></g></svg>')
   const board = {
     meta: { name: 't' },

@@ -50,6 +50,8 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 
 ## Easy to forget
 
+- **測試的暫存資料夾一律用 `tests/tmp.mjs` 的 `tempDir()`**：它們都建在同一個根目錄底下，測試程序結束時整個刪掉。
+  直接呼叫 `fs.mkdtempSync(os.tmpdir())` 會留下來；改成這樣之前，開發期間在 `/tmp` 累積了七千多個。
 - **`hyperframes browser path` 會順便下載 Chrome**，不是唯讀指令。體檢因此只看環境變數與快取資料夾，不呼叫它。
 - **進入點用動態載入**：`scripts/arch-video.mjs` 依指令才載入模組，沒裝相依套件時 `doctor` 才跑得起來。
   `lib/doctor.mjs` 不可以在檔案開頭載入 `node_modules` 裡的東西。
@@ -69,7 +71,6 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 - **字型與 GSAP 是從 `node_modules` 複製進輸出專案的**，渲染時不連網。
 - **「講原因的句子太少」的門檻是量出來的。** `build.mjs` 的 `MIN_REASON_SHARE` 是 15%：改版前的三支影片是 2% 到 6%，
   照新規則寫的第一支是 21%。樣本只有四支，之後有新的數據再調。它只數連接詞，擋不住硬塞的「因為」，原因對不對仍然要靠審核。
-- **`skill/examples/arch-blueprint/` 是改版前的分鏡**，現在建置會出現「講原因的句子太少」的警告。它留著當格式與版面的範例，不是腳本寫法的範例。
 - **配音快取在 `skill/.cache/tts/`**，鍵是「聲音＋語速＋文字」。換聲音或改一個字都會重新合成那一句。
 - **配音全部連不上時不會中斷**：成品是純字幕版，並列出警告。只失敗一部分時會停下來、不渲染（重跑會用快取補齊）。
 - **配音服務會限流。** 短時間配太多句（實測約一小時內 290 句）會開始回 429；`tts.mjs` 遇到會等 15、30、60 秒再試。
@@ -101,8 +102,7 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
   擋下不存在、沒通過檢查、沒審核、過期這四種情況；`build`（含預覽）與 `material` 指令都走它。
   來源裡沒被素材引用的未 commit 變動只印提醒，不擋。
 - **`basis` 只核對編號**：在不在素材裡、是不是〔不明〕或〔查不到〕。旁白是不是真的只講了那幾條，程式看不出來，靠審核點二與審核清單。
-- **`meta.material: false` 只給不講真實專案的分鏡**（`examples/demo`）。`examples/arch-blueprint` 是改用素材之前的分鏡，
-  沒有 `meta.material`，建置會多一個警告。
+- **`meta.material: false` 只給不講真實專案的分鏡**（`examples/demo`）。
 - **工作資料夾預設在素材庫裡**（`<素材庫>/video/<專案>/`），所以編排、分鏡、成品和素材一樣只有 owner 讀得到，也不會出現在專案裡。
 
 ## Not verified yet

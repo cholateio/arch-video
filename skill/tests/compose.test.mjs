@@ -2,7 +2,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { buildTimeline, CUE_LEAD } from '../lib/timeline.mjs'
 import { compose } from '../lib/compose.mjs'
@@ -11,6 +10,7 @@ import scenes from '../scenes/index.mjs'
 import widgets from '../widgets/index.mjs'
 import { ROOT } from '../lib/util.mjs'
 import zlib from 'node:zlib'
+import { tempDir } from './tmp.mjs'
 
 // A real (blank) PNG of the given size, written once per test run.
 function png(w, h) {
@@ -19,7 +19,7 @@ function png(w, h) {
   const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]) }
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0
   const raw = Buffer.alloc((w + 1) * h)
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-png-')), `${w}x${h}.png`)
+  const file = path.join(tempDir('png-'), `${w}x${h}.png`)
   fs.writeFileSync(file, Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]))
   return file
 }
@@ -35,7 +35,7 @@ const speak = (text) => {
 function run(board) {
   const spoken = new Map(board.scenes.flatMap((s) => (s.lines ?? []).map((l, j) => [`${s.id}:${j}`, speak(l.say ?? l.text)])))
   const tl = buildTimeline(board, spoken)
-  const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-compose-'))
+  const buildDir = tempDir('compose-')
   const warnings = []
   compose(board, tl, { theme, buildDir, baseDir: path.join(ROOT, 'examples/demo'), warn: (m) => warnings.push(m) })
   return { html: fs.readFileSync(path.join(buildDir, 'index.html'), 'utf8'), warnings, tl }

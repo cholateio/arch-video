@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gate, basisProblems, materialFile, workDir, shotFiles } from '../lib/material.mjs'
+import { tempDir } from './tmp.mjs'
 
 // The material skill is a sibling folder: skill-material/ in the repo, arch-material/ when installed.
 const sibling = ['../../skill-material/tests/fixture.mjs', '../../arch-material/tests/fixture.mjs']
@@ -89,7 +90,7 @@ test('meta.material 可以是專案名稱或素材檔的路徑；工作資料夾
 })
 
 test('截圖只能用素材登記過的：basis 裡要有一條主張引用它，檔案要在那個來源裡', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arch-video-shots-'))
+  const dir = tempDir('shots-')
   fs.mkdirSync(path.join(dir, 'screens'))
   fs.writeFileSync(path.join(dir, 'screens', 'a.png'), '')
   const material = { repos: [{ code: 'data', location: dir }], items: [{ id: 'F1', coords: [{ raw: 'data:screens/a.png' }] }, { id: 'F2', coords: [] }] }
