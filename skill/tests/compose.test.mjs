@@ -245,6 +245,15 @@ test('零件預設隨場景一起進場；寫了 enter 才等到那個觸發點'
   assert.ok(late.at > late.first)
 })
 
+test('零件裡的觸發詞在零件出現之前就對到時會警告', () => {
+  const lines = [{ text: '為什麼要預先翻好？' }, { text: '現在改成每小時翻好一批。' }]
+  const warnings = (at) => run({ scenes: [{ id: 'x', type: 'layout', lines, data: { parts: [{ widget: 'steps', enter: '現在', steps: [{ icon: 'clock', label: '每小時' }, { icon: 'translate', label: '翻好', at }] }] } }] }).warnings.join('\n')
+  assert.match(warnings('翻好'), /「翻好」比零件本身（enter「現在」）先出現/)
+  assert.doesNotMatch(warnings('翻好一批'), /先出現/)
+  const foot = run({ scenes: [{ id: 'x', type: 'layout', lines, data: { parts: [{ widget: 'figure', value: '1', label: '甲', enter: '現在', foot: { text: '註', at: '翻好' } }] } }] }).warnings.join('\n')
+  assert.match(foot, /「翻好」比零件本身（enter「現在」）先出現/)
+})
+
 test('版面與零件寫錯會報錯', () => {
   const lay = (d) => run(one('layout', d))
   assert.throws(() => lay({ parts: [] }), /parts 要 1 到 3 個/)

@@ -73,9 +73,16 @@ export default function layout(scene, ctx) {
     const enter = at != null ? ctx.t(at) : t0 + (title ? 0.3 : 0) + k * 0.2
     const sel = (s) => s.split(',').map((q) => `.p${k} ${q.trim()}`).join(', ')
     const box = { width: Math.round(b.w), height: Math.round(b.h - (label ? LABEL : 0) - (caption ? CAPTION : 0)) }
+    // A cue word can also occur earlier in the narration than the clause it was meant for ("翻好" inside "預先翻好"):
+    // the item would then show before its own part, under a missing heading.
+    const t = (cue) => {
+      const time = ctx.t(cue)
+      if (cue != null && at != null && time < enter - 0.05) ctx.warn(`第 ${k + 1} 個零件（${name}）的「${cue}」比零件本身（enter「${at}」）先出現：觸發詞在更早的旁白裡就對到了，請改成只出現在該講的那一句的說法`)
+      return time
+    }
     const inner = render(fields, {
       box, enter, theme: ctx.theme,
-      t: ctx.t, lineOf: ctx.lineOf, deadline: ctx.deadline,
+      t, lineOf: ctx.lineOf, deadline: ctx.deadline,
       warn: (m) => ctx.warn(`第 ${k + 1} 個零件（${name}）：${m}`),
       fail: (m) => { throw new Error(`${where}（${name}）：${m}`) },
       // A widget reports the height it needs; one that does not fit its part would run into its neighbour or the subtitles.
@@ -85,7 +92,7 @@ export default function layout(scene, ctx) {
       fromTo: (s, a, z, t) => ctx.fromTo(sel(s), a, z, t),
     })
     if (label) ctx.from(`.p${k} .pl`, { opacity: 0, y: -12, duration: 0.35, ease: 'power2.out' }, enter)
-    if (caption) ctx.from(`.p${k} .pc`, { opacity: 0, y: 12, duration: 0.35, ease: 'power2.out' }, caption.at != null ? ctx.t(caption.at) : enter + 0.6)
+    if (caption) ctx.from(`.p${k} .pc`, { opacity: 0, y: 12, duration: 0.35, ease: 'power2.out' }, caption.at != null ? t(caption.at) : enter + 0.6)
     // Stacked parts flow in one centred column, so the two read as one picture; the others sit in their own boxes.
     const place = arrange === 'stack' ? `width:${Math.round(b.w)}px` : `left:${Math.round(b.x)}px;top:${Math.round(b.y)}px;width:${Math.round(b.w)}px;height:${Math.round(b.h)}px`
     return `<div class="part p${k} mood-${mood}" style="${place}">
