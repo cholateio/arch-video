@@ -2,7 +2,7 @@
 // Usage:
 //   node scripts/arch-video.mjs doctor
 //   node scripts/arch-video.mjs material <project|file.md>
-//   node scripts/arch-video.mjs build <storyboard.json> [--stills-only [--voice]] [--theme <name>] [--out <dir>]
+//   node scripts/arch-video.mjs build <storyboard.json> [--stills-only [--voice] [--accept-material]] [--theme <name>] [--out <dir>]
 // Commands are imported lazily so that `doctor` still runs when the npm dependencies are not installed yet.
 const [cmd, file, ...flags] = process.argv.slice(2)
 
@@ -46,10 +46,11 @@ if (cmd === 'doctor') {
       檢查這台機器能不能產片，缺什麼會列出怎麼補
   node scripts/arch-video.mjs material <專案名稱|素材檔>
       確認素材可以用來做影片：存在、owner 審核過、沒有過期。印出故事線、因果弧、不能講的條目與工作資料夾
-  node scripts/arch-video.mjs build <storyboard.json> [--stills-only [--voice]] [--theme <主題>] [--out <資料夾>]
+  node scripts/arch-video.mjs build <storyboard.json> [--stills-only [--voice] [--accept-material]] [--theme <主題>] [--out <資料夾>]
       產出 <out>/<name>/<name>.mp4 與 <out>/<name>/stills/（每個場景一張預覽圖與一張總表）
       --stills-only  只產出預覽圖，不渲染影片。不連配音服務，時間用字數估算，旁白不會送到外部
       --voice        搭配 --stills-only：預覽時也配音，時間才準。旁白會送到配音服務，腳本確認後才用
+      --accept-material  搭配 --stills-only：素材更新後，把影片用到、內容變了的條目記成新版本。使用者看過改好的分鏡才用
       --theme        臨時換主題（預設讀分鏡的 meta.theme，沒寫就是 night），輸出到 <out>/<name>-<主題>/
       --out          輸出位置，預設是分鏡檔所在資料夾底下的 out/`)
   process.exit(2)

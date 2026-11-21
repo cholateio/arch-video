@@ -20,7 +20,7 @@ repo 裡有兩個 skill：`arch-material` 把專案整理成帶出處的素材�
 - `skill/` — skill 本體，可整個資料夾複製後 `npm install` 使用
   - `skill/SKILL.md` — 給 Claude 的工作流程：體檢、確認素材可以用、讀素材、編排、審核點一、畫架構圖、寫腳本與分鏡、預覽、審核點二、渲染、交付
   - `skill/scripts/arch-video.mjs` — 指令進入點：`doctor`、`material <專案>`、`build <分鏡檔>`
-  - `skill/lib/` — `doctor`（體檢）、`material`（確認素材可以用、核對場景的 `basis` 與截圖；檢查本身用的是素材 skill 的程式）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`secrets`（把分鏡與它載入的架構圖逐一交給素材 skill 的機密掃描）、`icons`、`util`
+  - `skill/lib/` — `doctor`（體檢）、`material`（確認素材可以用、核對場景的 `basis` 與截圖、比對分鏡旁 `<分鏡>.basis.json` 記下的條目內容；檢查本身用的是素材 skill 的程式）、`build`（產片主流程）、`tts`（配音與快取）、`timeline`（時間軸與觸發點）、`compose`（合成 HyperFrames 專案）、`render`（呼叫 HyperFrames 與 ffmpeg）、`secrets`（把分鏡與它載入的架構圖逐一交給素材 skill 的機密掃描）、`icons`、`util`
   - `skill/scenes/` — 場景元件，一個檔案一種：`title`、`statement`、`file`、`flow`、`map`、`chat`、`compare`、`list`、`stat`、`tree`、`cycle`、`terminal`、`layout`、`shot`（素材裡的實際畫面）
   - `skill/widgets/` — 零件，一個檔案一種，放在 `layout` 場景的格子裡：`figure`、`units`、`slots`、`meter`、`points`、`steps`、`term`、`panel`
   - `skill/themes/` — 主題：`<名稱>.mjs` 放該主題的所有設計數值，`base.css` 是共用樣式

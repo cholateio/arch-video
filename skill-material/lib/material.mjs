@@ -45,7 +45,7 @@ function parseItem(line, n, problems) {
   if (!m) return null
   const [, id, rest] = m
   const marks = [...rest.matchAll(MARK)]
-  const item = { id, line: n, text: rest.trim(), status: null, date: null, coords: [], role: null, derive: false }
+  const item = { id, line: n, text: rest.trim(), status: null, date: null, coords: [], role: null, derive: false, derivation: null }
   const role = ROLES.find((r) => rest.startsWith(`${r}：`))
   if (role) item.role = role
   if (marks.length > 1) problems.push({ level: 'error', line: n, msg: `${id} 有不只一個狀態標記；一條主張只講一件事，拆成兩條` })
@@ -82,6 +82,8 @@ export function parseMaterial(text) {
 
   lines.forEach((line, i) => {
     const n = i + 1
+    // Everything an arc says, unnumbered blocks (gaps, the owner's words, later developments) included.
+    if (arc && line.trim() && !/^#{1,3} /.test(line)) arc.body.push(line.trim())
     if (/^# /.test(line)) { out.title ??= line.slice(2).trim(); return }
     if (/^## /.test(line)) { h2 = line.slice(3).trim(); h3 = null; arc = null; block = null; table = null; last = null; out.sections.push(h2); return }
     if (/^### /.test(line)) {
@@ -90,7 +92,7 @@ export function parseMaterial(text) {
       if (h2 === '因果弧') {
         const m = /^(A\d+)\s+(.+)$/.exec(h3)
         if (!m) { problems.push({ level: 'error', line: n, msg: `因果弧的小節標題要寫成「### A1 <一句因果問題>」，這一行是「${h3}」` }); return }
-        arc = { id: m[1], question: m[2].trim(), line: n, storylines: [], start: null, end: null, blocks: [], roles: [], evidence: 0 }
+        arc = { id: m[1], question: m[2].trim(), line: n, storylines: [], start: null, end: null, blocks: [], roles: [], evidence: 0, body: [] }
         out.arcs.push(arc)
       }
       return
@@ -154,7 +156,7 @@ export function parseMaterial(text) {
     }
 
     const bullet = /^\s*- (.*)$/.exec(line)
-    if (bullet && last && /^\s{2,}- 推法：\s*\S/.test(line)) { last.derive = true; return }
+    if (bullet && last && /^\s{2,}- 推法：\s*\S/.test(line)) { last.derive = true; last.derivation = bullet[1].trim(); return }
     if (arc && bullet) {
       const body = bullet[1]
       if (!block) {

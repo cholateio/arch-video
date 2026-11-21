@@ -10,7 +10,7 @@ import { compose } from './compose.mjs'
 import { hf, ffmpeg } from './render.mjs'
 import { ROOT } from './util.mjs'
 import { scanBoard, mask } from './secrets.mjs'
-import { gate, materialFile, basisProblems, shotFiles } from './material.mjs'
+import { gate, materialFile, basisProblems, shotFiles, compareBasis, lockFile } from './material.mjs'
 
 // The video is driven by the need and the architecture diagram; raw excerpts are only evidence.
 // Short boards (component demos, clips) are exempt.
@@ -165,11 +165,51 @@ export function reasonWarnings(board) {
   return out
 }
 
+// Entries the storyboard rests on whose wording changed since it was written. A preview warns, so the revised script can
+// still be shown; a render stops until the owner has seen the change and a preview with --accept-material recorded it.
+export function materialChanges(board, boardPath, texts, { stillsOnly, accept, warn }) {
+  const file = lockFile(boardPath)
+  const lock = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null
+  const { changed, added, next } = compareBasis(board, texts, lock)
+  // Shown in full: the owner reviews the old wording against the new, and a cut could hide the very words that changed.
+  const describe = ({ id, scenes, was, now }) => {
+    const head = `    ${id}（場景 ${scenes.join('、')}）：`
+    if (!now.body) return `${head}「${was.text}」→「${now.text}」`
+    // An arc: the lines that went away and the lines that came in. Order is part of the story, so a pure reorder
+    // shows the new order.
+    const before = was.body ?? []
+    const gone = before.filter((l) => !now.body.includes(l))
+    const came = now.body.filter((l) => !before.includes(l))
+    const lines = [...gone.map((l) => `－ ${l}`), ...came.map((l) => `＋ ${l}`)]
+    if (was.text !== now.text) lines.unshift(`－ ${was.text}`, `＋ ${now.text}`)
+    if (!lines.length) lines.push('只有順序改了，新的順序：', ...now.body.map((l, i) => `${i + 1}. ${l}`))
+    return `${head}弧的內容改了\n${lines.map((l) => `      ${l}`).join('\n')}`
+  }
+  const list = changed.map(describe).join('\n')
+  if (changed.length && !accept) {
+    const head = `素材在這支影片寫好之後更新過，影片用到的 ${changed.length} 條內容變了`
+    if (!stillsOnly) throw new Error(`${head}，已停止：\n${list}\n照新的素材改分鏡，在審核點二給使用者看過，再用 --stills-only --accept-material 預覽一次，記下新版本。`)
+    warn(`${head}，分鏡可能還在講舊的：\n${list}\n  照新的素材改分鏡，在審核點二列給使用者看；使用者放行後才加 --accept-material 預覽一次。`)
+  }
+  if (accept) for (const c of changed) next[c.id] = texts.get(c.id)
+  // Written by the caller once the whole build has succeeded: an accepting preview that fails accepts nothing.
+  return () => {
+    if (!(!lock || added.length || (accept && changed.length))) return
+    const note = '這支影片用到的素材條目在記下時的內容。素材更新後，build 靠它找出內容變了的條目；不要手改或刪掉。'
+    fs.writeFileSync(file, JSON.stringify({ note, entries: next }, null, 2) + '\n')
+    if (!lock) console.log(`  記下影片用到的 ${added.length} 條素材：${path.basename(file)}`)
+    if (accept && changed.length) console.log(`  改用素材的新版本：${changed.map((c) => c.id).join('、')}`)
+  }
+}
+
 export async function build(file, flags) {
   const stillsOnly = flags.includes('--stills-only')
   // A preview never contacts the speech service unless asked to: a script is reviewed before its narration is sent anywhere.
   // Only a full build, or a preview with --voice, synthesises speech.
   if (flags.includes('--voice') && !stillsOnly) throw new Error('--voice 只用在 --stills-only：完整產片本來就會配音')
+  // Taking in a material update is a decision the owner makes at review point two, never a side effect of rendering.
+  const accept = flags.includes('--accept-material')
+  if (accept && !stillsOnly) throw new Error('--accept-material 只用在 --stills-only：使用者看過改好的分鏡之後，先預覽一次記下素材的新版本，再渲染')
   const offline = stillsOnly && !flags.includes('--voice')
   const warnings = []
   const warn = (m) => warnings.push(m)
@@ -220,6 +260,7 @@ export async function build(file, flags) {
   // Where the content comes from. A name or path is the material the video is made from; `false` marks a board that
   // explains no real project (the component demo). Anything else is questioned, because the rule has no exception.
   const ref = board.meta?.material
+  let saveLock = null
   if (typeof ref === 'string' && ref) {
     const g = await gate(materialFile(ref, baseDir))
     if (!g.ok) throw new Error(`素材還不能用來做影片，已停止：\n${g.stops.map((s) => `  - ${s}`).join('\n')}\n先用 arch-material skill 整理或更新素材，再回來。`)
@@ -229,6 +270,7 @@ export async function build(file, flags) {
     basis.errors.push(...shotFiles(board, g.material))
     if (basis.errors.length) throw new Error(`分鏡講到素材裡沒有、或不能講的內容：\n${basis.errors.map((s) => `  - ${s}`).join('\n')}`)
     basis.warnings.forEach(warn)
+    saveLock = materialChanges(board, boardPath, g.texts, { stillsOnly, accept, warn })
   } else if (ref !== false) {
     // Pixels escape the secret scan, so a screenshot is only trusted through the material (or in a component demo).
     const shots = shotScenes(board)
@@ -340,5 +382,6 @@ export async function build(file, flags) {
     console.log(`  長度 ${seconds.toFixed(1)} 秒；畫面有；聲音${kinds.includes('audio') ? `有（${voiced}/${spoken.size} 句有配音）` : '沒有'}`)
   }
 
+  if (saveLock && !process.exitCode && lint.ok) saveLock()
   flushWarnings()
 }

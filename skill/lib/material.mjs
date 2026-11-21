@@ -1,6 +1,7 @@
 // The gate between the two skills: a video is made only from material that exists, was reviewed by the owner and
 // still matches its sources. The checks live in the material skill, which sits next to this one: skill-material/ in
 // the repo, arch-material/ when the two are installed side by side.
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -42,7 +43,7 @@ export async function materialSkill() {
 
 // `stops` are the reasons the video skill has to hand over to the material skill first.
 export async function gate(file, { today, skill } = {}) {
-  const out = { ok: false, file, stops: [], notes: [], entries: new Map(), check: null, status: null, material: null, backgrounds: [] }
+  const out = { ok: false, file, stops: [], notes: [], entries: new Map(), texts: new Map(), check: null, status: null, material: null, backgrounds: [] }
   const api = skill ?? (await materialSkill())
   if (!api) { out.stops.push('找不到 arch-material skill：兩個 skill 要放在同一個資料夾底下'); return out }
   if (!fs.existsSync(file)) { out.stops.push(`素材庫裡沒有這個專案的素材（${file}）`); return out }
@@ -59,16 +60,49 @@ export async function gate(file, { today, skill } = {}) {
 
   const { material: m, library } = api.load(file)
   out.material = m
-  for (const it of [...m.storylines, ...m.items]) out.entries.set(it.id, it.status ?? null)
-  for (const a of m.arcs) out.entries.set(a.id, null)
+  // What each entry says, its derivation included. Coordinates and check dates are left out: they move without the
+  // claim changing. They are dropped by position, as the parser reads them (a claim's coordinates follow its status
+  // mark), so a code literal in the wording is never mistaken for one.
+  // A claim's date (when the owner said it) is provenance; a background entry's date is only when it was last checked.
+  const said = (it, dated = true) => `${it.status ? `〔${it.status}${dated && it.date ? ` ${it.date}` : ''}〕` : ''}${it.text}${it.derivation ? `（${it.derivation}）` : ''}`
+  const byId = new Map(m.items.map((it) => [it.id, it]))
+  const arcLines = (body) => {
+    let block = null
+    return body.map((l) => {
+      if (l.startsWith('#### ')) { block = l.slice(5).trim(); return l }
+      const item = byId.get(/^- \*\*([^*]+)\*\*/.exec(l)?.[1])
+      if (item) return `- **${item.id}** ${said(item)}`
+      // Evidence and background lines open with their coordinate; the words after it are what the arc says.
+      if (block === '物證' || block === '需要的背景') return l.replace(/^- `[^`]*`/, '- `…`')
+      return l
+    })
+  }
+  const digest = (s) => crypto.createHash('sha1').update(s).digest('hex').slice(0, 16)
+  const text = (shown) => ({ text: shown, print: digest(shown) })
+  for (const it of [...m.storylines, ...m.items]) {
+    out.entries.set(it.id, it.status ?? null)
+    out.texts.set(it.id, text(said(it)))
+  }
+  for (const a of m.arcs) {
+    out.entries.set(a.id, null)
+    // A scene that cites an arc tells its story, so the arc changes when any line of it does. The body is kept so a
+    // change can be shown line by line.
+    const body = arcLines(a.body)
+    out.texts.set(a.id, { text: `${a.question}（終點：${a.end ?? '?'}）`, print: digest([a.question, ...body].join('\n')), body })
+  }
   // Background entries count only when the material points at them: the library is shared by every project.
   const used = m.uses.filter((u) => u.coord.bg && u.coord.entry)
   for (const slug of new Set(used.map((u) => u.coord.bg))) {
     const f = path.join(library, 'background', `${slug}.md`)
     if (!fs.existsSync(f)) continue
     out.backgrounds.push(f)
-    const status = new Map(api.parseBackground(fs.readFileSync(f, 'utf8')).entries.map((e) => [e.id, e.status ?? null]))
-    for (const u of used) if (u.coord.bg === slug && status.has(u.coord.entry)) out.entries.set(`bg:${slug}#${u.coord.entry}`, status.get(u.coord.entry))
+    const bg = new Map(api.parseBackground(fs.readFileSync(f, 'utf8')).entries.map((e) => [e.id, e]))
+    for (const u of used) {
+      const e = bg.get(u.coord.entry)
+      if (u.coord.bg !== slug || !e) continue
+      out.entries.set(`bg:${slug}#${e.id}`, e.status ?? null)
+      out.texts.set(`bg:${slug}#${e.id}`, text(said(e, false)))
+    }
   }
   out.ok = !out.stops.length
   return out
@@ -97,6 +131,28 @@ export function shotFiles(board, material) {
     s.data.file = file
   }
   return errors
+}
+
+// The material can be updated after a storyboard was written from it. An entry keeps its id when its wording changes,
+// so the basis check alone would let an old script narrate the old claim. The storyboard's lock file remembers what
+// every entry it used said; it is never pruned, so dropping an id from a basis and adding it back does not reset it.
+export const lockFile = (boardPath) => boardPath.replace(/\.json$/i, '') + '.basis.json'
+
+export function compareBasis(board, texts, lock) {
+  const was = lock?.entries ?? {}
+  const scenes = new Map()
+  for (const s of board.scenes ?? []) {
+    for (const id of Array.isArray(s.basis) ? s.basis : []) if (texts.has(id)) scenes.set(id, [...(scenes.get(id) ?? []), s.id])
+  }
+  const changed = []
+  const added = []
+  const next = { ...was }
+  for (const [id, where] of scenes) {
+    const now = texts.get(id)
+    if (!was[id]) { added.push(id); next[id] = now }
+    else if (was[id].print !== now.print) changed.push({ id, scenes: where, was: was[id], now })
+  }
+  return { changed, added, next }
 }
 
 // The claims of a video are closed: every scene lists the material entries it rests on in `basis`, and an empty list

@@ -6,7 +6,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { gate, basisProblems, materialFile, workDir, shotFiles } from '../lib/material.mjs'
+import { gate, basisProblems, materialFile, workDir, shotFiles, lockFile } from '../lib/material.mjs'
+import { materialChanges } from '../lib/build.mjs'
 import { tempDir } from './tmp.mjs'
 
 // The material skill is a sibling folder: skill-material/ in the repo, arch-material/ when installed.
@@ -73,6 +74,111 @@ test('場景的 basis 只能指到素材裡有的條目；原因不明與查不�
   has(bad.errors, /s2.*查不到來源的背景/)
   has(bad.errors, /s3.*要寫成編號的陣列/)
   has(bad.errors, /s4.*「bg:other#B1」不在素材裡/)
+})
+
+test('素材更新後，影片用到、內容變了的條目：預覽警告，渲染停下，使用者放行後才記成新版本', needs, async () => {
+  const f = fixture()
+  const work = tempDir('lock-')
+  const boardPath = path.join(work, 'storyboard.json')
+  const lock = lockFile(boardPath)
+  const b = board(['A1.2'], ['A1'], ['bg:hosted-scheduler#B1'])
+  const changes = async (opts) => {
+    const warnings = []
+    materialChanges(b, boardPath, (await run(f)).texts, { warn: (w) => warnings.push(w), ...opts })()
+    return warnings
+  }
+  assert.deepEqual(await changes({ stillsOnly: true }), [])
+  assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(lock, 'utf8')).entries).sort(), ['A1', 'A1.2', 'bg:hosted-scheduler#B1'])
+
+  // A moved coordinate or a re-checked background date is not a change of what the entry says.
+  f.edit('〔有出處〕 `proj:src/fetch.mjs#LIMIT`', '〔有出處〕 `proj:src/fetch.mjs:1-2`')
+  fs.writeFileSync(path.join(f.library, 'background/hosted-scheduler.md'), fs.readFileSync(path.join(f.library, 'background/hosted-scheduler.md'), 'utf8').replace('〔有出處 2026-11-20〕', '〔有出處 2026-11-21〕'))
+  assert.deepEqual(await changes({}), [])
+
+  f.edit('每一輪最多十則（來源數見 →F1）', '每一輪最多二十則（來源數見 →F1）')
+  const before = fs.readFileSync(lock, 'utf8')
+  const warned = await changes({ stillsOnly: true })
+  has(warned, /影片用到的 2 條內容變了/)
+  has(warned, /A1\.2（場景 s0）：「〔有出處〕選擇：每一輪最多十則.*」→「〔有出處〕選擇：每一輪最多二十則/)
+  has(warned, /A1（場景 s1）：弧的內容改了\n\s+－ - \*\*A1\.2\*\* 〔有出處〕選擇：每一輪最多十則[^\n]*\n\s+＋ - \*\*A1\.2\*\* 〔有出處〕選擇：每一輪最多二十則/)
+  assert.equal(fs.readFileSync(lock, 'utf8'), before)
+  await assert.rejects(changes({}), /內容變了，已停止/)
+
+  // Dropping the id from the basis and adding it back does not make the change go away.
+  materialChanges(board(['F1']), boardPath, (await run(f)).texts, { stillsOnly: true, warn: () => {} })()
+  await assert.rejects(changes({}), /A1\.2/)
+
+  assert.deepEqual(await changes({ stillsOnly: true, accept: true }), [])
+  assert.deepEqual(await changes({}), [])
+  assert.ok(JSON.parse(fs.readFileSync(lock, 'utf8')).entries.F1, '後來加進 basis 的條目也記下來')
+})
+
+test('只改了〔推得〕的推法，或弧裡沒有編號的段落，也算內容變了', needs, async () => {
+  const f = fixture()
+  const boardPath = path.join(tempDir('lock-'), 'storyboard.json')
+  const b = board(['A1.4'], ['A1'])
+  const changes = async (opts) => materialChanges(b, boardPath, (await run(f)).texts, { warn: () => {}, ...opts })()
+  await changes({ stillsOnly: true })
+  f.edit('- 推法：10 則乘以 24 輪。', '- 推法：10 則乘以 24 輪，再扣掉維護時段。')
+  await assert.rejects(changes({}), /A1\.4（場景 s0）：.*推法：10 則乘以 24 輪。）」→.*再扣掉維護時段/)
+  await changes({ stillsOnly: true, accept: true })
+  await changes({})
+  f.edit('`proj:src/fetch.mjs#LIMIT` 一個常數', '`proj:src/fetch.mjs#LIMIT` 兩個常數')
+  await assert.rejects(changes({}), /影片用到的 1 條內容變了[\s\S]*A1（場景 s1）：弧的內容改了\n\s+－ - `…` 一個常數\n\s+＋ - `…` 兩個常數/)
+  await changes({ stillsOnly: true, accept: true })
+  // A code literal that is not a coordinate of this material is wording, not a place.
+  f.edit('兩個常數', '兩個常數 `MAX_PER_RUN`')
+  await changes({ stillsOnly: true, accept: true })
+  f.edit('`MAX_PER_RUN`', '`MAX_PER_TICK`')
+  await assert.rejects(changes({}), /＋ - `…` 兩個常數 `MAX_PER_TICK`/)
+  await changes({ stillsOnly: true, accept: true })
+  // Swapping two lines changes the story without adding or removing a line.
+  f.edit('- **A1.1** 所求：花費不能失控。 〔有出處〕 `proj:docs/design.md#Why a cap`\n- **A1.2**', '- **A1.2**')
+  f.edit('- **A1.3**', '- **A1.1** 所求：花費不能失控。 〔有出處〕 `proj:docs/design.md#Why a cap`\n- **A1.3**')
+  await assert.rejects(changes({}), /只有順序改了，新的順序：\n\s+1\. - 故事線：S1[\s\S]*5\. - \*\*A1\.2\*\*[\s\S]*6\. - \*\*A1\.1\*\*/)
+})
+
+test('口述的日期換了算變動；背景知識重新查證的日期不算', needs, async () => {
+  const f = fixture()
+  const boardPath = path.join(tempDir('lock-'), 'storyboard.json')
+  f.edit('所求：花費不能失控。 〔有出處〕 `proj:docs/design.md#Why a cap`', '所求：花費不能失控。 〔口述 2026-11-20〕')
+  const check = async (opts) => materialChanges(board(['A1.1'], ['bg:hosted-scheduler#B1']), boardPath, (await run(f)).texts, { warn: () => {}, ...opts })()
+  await check({ stillsOnly: true })
+  f.edit('〔口述 2026-11-20〕', '〔口述 2026-11-21〕')
+  await assert.rejects(check({}), /A1\.1（場景 s0）：「〔口述 2026-11-20〕所求/)
+})
+
+test('長的條目改在句尾，也看得到改了什麼', needs, async () => {
+  const f = fixture()
+  const boardPath = path.join(tempDir('lock-'), 'storyboard.json')
+  const long = '所求：花費不能失控，'.repeat(8)
+  f.edit('所求：花費不能失控。', `${long}甲。`)
+  const changes = async (opts) => materialChanges(board(['A1.1']), boardPath, (await run(f)).texts, { warn: () => {}, ...opts })()
+  await changes({ stillsOnly: true })
+  f.edit(`${long}甲。`, `${long}乙。`)
+  await assert.rejects(changes({}), /甲。」→「[^」]*乙。」/)
+})
+
+test('主張的文字裡像座標的字詞照樣比對；接受新版本的預覽失敗時，記錄不會改', needs, async () => {
+  const f = fixture()
+  const boardPath = path.join(tempDir('lock-'), 'storyboard.json')
+  const check = async (opts) => materialChanges(board(['A1.4'], ['A1']), boardPath, (await run(f)).texts, { warn: () => {}, ...opts })
+  // The coordinates after the status mark are places; moving them is not a change.
+  ;(await check({ stillsOnly: true }))()
+  f.edit('影響：一天最多 240 則。 〔推得〕 `proj:src/fetch.mjs#LIMIT`', '影響：一天最多 240 則。 〔推得〕 `proj:src/fetch.mjs:1-2`')
+  ;(await check({}))()
+  // Before the status mark it is wording, even when it looks like a coordinate.
+  f.edit('影響：一天最多 240 則。', '影響：一天最多 240 則（`proj:old`）。')
+  ;(await check({ stillsOnly: true, accept: true }))()
+  f.edit('`proj:old`', '`proj:new`')
+  await assert.rejects(check({}), /A1\.4（場景 s0）[\s\S]*A1（場景 s1）[\s\S]*proj:new/)
+  ;(await check({ stillsOnly: true, accept: true }))()
+
+  f.edit('10 則乘以 24 輪', '10 則乘以 12 輪')
+  const before = fs.readFileSync(lockFile(boardPath), 'utf8')
+  await check({ stillsOnly: true, accept: true }) // the build fails afterwards, so the returned save is never called
+  assert.equal(fs.readFileSync(lockFile(boardPath), 'utf8'), before)
+  await assert.rejects(check({}), /A1\.4/)
 })
 
 test('沒寫 basis 的場景會警告；超過一半的場景 basis 是空的也會警告', needs, async () => {
