@@ -21,6 +21,15 @@ export function materialFile(ref, baseDir = process.cwd()) {
 // Storyboards, previews and videos stay out of the project too: they go next to the material, in the same library.
 export const workDir = (file) => path.join(path.dirname(file), 'video', path.basename(file, '.md'))
 
+// One module of the material skill, or null when that skill is not installed beside this one.
+export async function siblingModule(name) {
+  for (const rel of SIBLINGS) {
+    const url = new URL(rel + name, import.meta.url)
+    if (fs.existsSync(fileURLToPath(url))) return import(url.href)
+  }
+  return null
+}
+
 export async function materialSkill() {
   for (const rel of SIBLINGS) {
     const at = (name) => new URL(rel + name, import.meta.url)

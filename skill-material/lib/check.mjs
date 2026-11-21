@@ -5,7 +5,7 @@ import path from 'node:path'
 import { parseMaterial, parseBackground, SECTIONS, OVERVIEW, REQUIRED_ROLES, needsStatus, validDate } from './material.mjs'
 import { openRepo, lookup, localPrint, hasCommit } from './repo.mjs'
 import { expectedPrints } from './local.mjs'
-import { loadScanner } from './shared.mjs'
+import { scanText } from './secrets.mjs'
 
 export const FORMAT = '1'
 // A background entry older than this is checked against its source again before it is used.
@@ -187,19 +187,15 @@ export async function check(file, options = {}) {
   }
 
   // Sensitive content. The material is private, but the video is written from it, so nothing sensitive may rest here.
-  const scan = await loadScanner()
-  if (!scan) error('找不到 arch-video skill 的機密掃描（兩個 skill 要放在同一個資料夾底下）；沒有掃描就不算檢查過')
-  else {
-    text.split(/\r?\n/).forEach((line, i) => {
-      for (const f of scan(line)) error(`疑似機密或個資（${f.label}：${f.excerpt}）；素材只寫類型與位置，不寫值`, i + 1)
+  text.split(/\r?\n/).forEach((line, i) => {
+    for (const f of scanText(line)) error(`疑似機密或個資（${f.label}：${f.excerpt}）；素材只寫類型與位置，不寫值`, i + 1)
+  })
+  for (const [slug, bg] of backgrounds) {
+    if (!bg) continue
+    const raw = fs.readFileSync(path.join(library, 'background', `${slug}.md`), 'utf8')
+    raw.split(/\r?\n/).forEach((line, i) => {
+      for (const f of scanText(line)) error(`background/${slug}.md 第 ${i + 1} 行：疑似機密或個資（${f.label}：${f.excerpt}）`)
     })
-    for (const [slug, bg] of backgrounds) {
-      if (!bg) continue
-      const raw = fs.readFileSync(path.join(library, 'background', `${slug}.md`), 'utf8')
-      raw.split(/\r?\n/).forEach((line, i) => {
-        for (const f of scan(line)) error(`background/${slug}.md 第 ${i + 1} 行：疑似機密或個資（${f.label}：${f.excerpt}）`)
-      })
-    }
   }
 
   // The library holds the owner's remarks and the location of sensitive things: other accounts should not read it.

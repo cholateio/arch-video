@@ -31,8 +31,9 @@ if (cmd === 'doctor') {
   }
   console.log(`\n素材可以用。工作資料夾：${workDir(g.file)}`)
 } else if (cmd === 'build' && file) {
-  const { build } = await import('../lib/build.mjs')
   try {
+    // Imported inside the try: loading it also loads the material skill's scanner, which may be missing.
+    const { build } = await import('../lib/build.mjs')
     await build(file, flags)
   } catch (e) {
     // Print the message only: a stack trace buries it and echoes source lines.

@@ -61,7 +61,7 @@ npm run demo                     # 產出 examples/demo/out/demo/demo.mp4（配�
 - **觸發詞用字元位置對時間。** 配音服務的斷詞會把詞切開（「十二個」變成「十」「二個」），
   所以 `timeline.mjs` 把各段文字接起來找起始字元，不直接比對詞。
 - **有 `say` 的句子，觸發詞要從 `say` 裡挑。** 時間戳來自實際唸出來的文字。
-- **機密掃描排在配音之前。** 旁白文字會送到外部的配音服務，所以 `build.mjs` 先跑 `secrets.mjs` 的 `scanBoard()`，有發現就停。
+- **機密掃描排在配音之前。** 旁白文字會送到外部的配音服務，所以 `build.mjs` 先跑 `skill/lib/secrets.mjs` 的 `scanBoard()`（掃描規則在素材 skill 的 `secrets.mjs`），有發現就停。
   回報時只印遮蔽後的片段。`meta.allow` 只接受和找到的內容完全相同、至少六個字的字串。測試裡的假金鑰要在執行時拼出來，不要寫成完整的字面值，否則 commit 會被 kit 的機密檢查擋下。
 - **觸發點比旁白早 0.8 秒，而且對齊子句的開頭，不是觸發詞本身。** `timeline.mjs` 的 `CUE_LEAD` 控制提前量；
   子句靠配音回傳的詞尾標點判斷。同一個子句的後續觸發詞最多再晚 0.3 秒，所以每個觸發點至少比子句早 0.5 秒：
@@ -90,8 +90,9 @@ npm run demo                     # 產出 examples/demo/out/demo/demo.mp4（配�
 - **符號連結一律不跟過去。** 座標指到連結會報錯；資料夾的指紋把連結算成「指向哪裡」，不讀它後面的內容。
 - **`check` 只驗證座標指得到東西，不驗證主張對不對。** 第一次實跑時 `check` 全過，另一個模型回原始碼查出 13 處內容問題
   （主旨被自己的一條事實推翻、拿舊註解當現在的原因、說過頭）。所以流程裡有一步強制交給另一個查證者（`references/verify-checklist.md`）。
-- **素材 skill 靠相對位置找到機密掃描**：`skill-material/lib/shared.mjs` 依序找 `../skill` 與 `../arch-video`。
-  兩個 skill 沒有放在同一層時 `check` 會直接報錯，不會跳過掃描。
+- **依賴只有一個方向：影片 skill 用素材 skill，反過來不用。** 機密掃描放在 `skill-material/lib/secrets.mjs`（只用 Node 內建功能），
+  影片 skill 的 `lib/material.mjs` 用 `siblingModule()` 依序找 `../skill-material` 與 `../arch-material` 載入它和素材的檢查。
+  找不到時影片 skill 會直接報錯，不會跳過掃描；素材 skill 單獨放著也能跑。
 - **「建議整份重新整理」數的是被引用的位置，不是變動的檔案。** 一個資料夾座標底下改了六個檔案只算一個位置；
   原本照檔案數，真實專案上一個 commit 就被判成要整份重來（16 個位置裡其實只有 3 個變了）。
 - **`stamp` 記下的是現在 checkout 的版本，不管你查證到哪裡。** 來源在整理期間又多了 commit 時，貼上新的版本表等於替沒看過的內容蓋章
