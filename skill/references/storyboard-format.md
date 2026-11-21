@@ -13,10 +13,11 @@
     "voice": "zh-TW-HsiaoChenNeural",
     "theme": "night",
     "material": "my-project",
+    "length": "6:00",
     "properNouns": ["arch-blueprint"],
     "terms": { "Supabase": { "intro": "雲端的資料庫服務", "plain": "資料庫" } }
   },
-  "chapters": [{ "id": "workflow" }],
+  "chapters": [{ "id": "workflow", "length": "1:30" }],
   "scenes": [
     {
       "id": "rule",
@@ -35,12 +36,14 @@
 |---|---|
 | `meta.name` | 輸出的資料夾與檔名 |
 | `meta.voice` | 配音的聲音，預設 `zh-TW-HsiaoChenNeural` |
+| `meta.length` | 目標長度，照編排寫（`"6:00"` 或秒數）。預覽與渲染都會印出各章的實際與目標；總長超過一成會警告。正式的影片（`meta.material` 是字串）沒寫也會警告 |
+| `meta.rate` | 配音的語速，例如 `"+10%"`；預設是聲音本身的速度 |
 | `meta.theme` | 主題，預設 `night`；另有 `blueprint` |
 | `meta.material` | 這支影片根據的素材：素材庫（`~/arch-material/`）裡的專案名稱，或素材檔的路徑（相對於分鏡檔）。見下面的「素材」。元件示範這類不講真實專案的分鏡寫 `false` |
 | `meta.properNouns` | 旁白裡可以保留英文的專有名詞。名稱裡有空格（`GitHub Actions`）就整個寫成一項 |
 | `meta.terms` | 每個會唸出來的專有名詞怎麼介紹、之後用什麼代稱，照編排的「名詞」表寫。見下面的「專有名詞」。寫在這裡的名字也算進 `properNouns` |
 | `meta.allow` | 機密掃描放行的字串，要和被擋下的內容完全相同、至少六個字。只有使用者同意公開的內容才放，例如專案對外的聯絡信箱 |
-| `chapters` | 章節清單，每一章一個 `id`，只用來把場景分段，畫面上不顯示。場景的 `chapter` 要是這裡列的 `id` |
+| `chapters` | 章節清單，每一章一個 `id`，只用來把場景分段，畫面上不顯示。場景的 `chapter` 要是這裡列的 `id`。`length` 寫編排分給這一章的時間（`"1:30"`），超過兩成會警告 |
 | `scenes[].id` | 小寫英數與連字號，字母開頭，不可重複 |
 | `scenes[].type` | 場景元件，見下方 |
 | `scenes[].chapter` | 屬於哪一章（可省略） |

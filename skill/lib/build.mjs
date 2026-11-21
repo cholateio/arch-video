@@ -29,6 +29,39 @@ export function balanceWarnings(board) {
   return [`佐證類場景（file、terminal、tree）有 ${evidence} 個，超過 ${board.scenes.length} 個場景的三分之一：影片會變成程式碼導讀，請改用架構圖、流程或對比來講，只留必要的範例`]
 }
 
+// "6:00", "90" or 90 -> seconds; anything else -> NaN.
+export function parseLength(v) {
+  if (typeof v === 'number') return v
+  const m = String(v ?? '').trim().match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/)
+  return m ? Number(m[1] ?? 0) * 60 + Number(m[2]) : NaN
+}
+const clock = (sec) => { const t = Math.round(sec); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }
+
+// Every rule that makes a part clearer also makes it longer, so the length agreed at the first checkpoint is checked
+// here: a total more than 10% over it, or a chapter more than 20% over its own share, is a warning.
+// Returns the per-chapter durations too, for the build log.
+export function lengthReport(board, tl) {
+  const warnings = []
+  const chapters = board.chapters ?? []
+  const spent = new Map(chapters.map((c) => [c.id, 0]))
+  for (const s of tl.scenes) if (s.chapter) spent.set(s.chapter, (spent.get(s.chapter) ?? 0) + (s.end - s.start))
+  const rows = chapters.map((c) => ({ id: c.id, seconds: spent.get(c.id) ?? 0, target: c.length == null ? null : parseLength(c.length) }))
+  const target = board.meta?.length == null ? null : parseLength(board.meta.length)
+  if (Number.isNaN(target)) warnings.push(`meta.length 要寫成「6:00」或秒數，現在是「${board.meta.length}」`)
+  else if (target == null) {
+    if (typeof board.meta?.material === 'string') warnings.push('分鏡沒有寫 meta.length：照編排在審核點一定的目標長度寫上（例如 "6:00"），build 才會檢查有沒有超過')
+  } else if (tl.total > target * 1.1) {
+    const over = rows.filter((r) => r.target != null && r.seconds > r.target).map((r) => `${r.id} 多 ${Math.round(r.seconds - r.target)} 秒`)
+    warnings.push(`總長 ${clock(tl.total)}，超過目標 ${clock(target)} 的一成${over.length ? `（${over.join('、')}）` : ''}：拿掉場景或少講深一條弧，不要只靠加快語速`)
+  }
+  for (const r of rows) {
+    if (Number.isNaN(r.target)) warnings.push(`章節「${r.id}」的 length 要寫成「1:30」或秒數`)
+    else if (r.target == null && target != null) warnings.push(`章節「${r.id}」沒有寫 length：照編排的分段表寫上這一章分到的時間`)
+    else if (r.target != null && r.seconds > r.target * 1.2) warnings.push(`章節「${r.id}」${clock(r.seconds)}，超過它分到的 ${clock(r.target)}`)
+  }
+  return { warnings, rows: rows.map((r) => ({ ...r, text: `${r.id} ${clock(r.seconds)}${r.target != null && !Number.isNaN(r.target) ? `／${clock(r.target)}` : ''}` })) }
+}
+
 // English words a line would speak, once the proper nouns are taken out. Longer names go first, so "GitHub Actions"
 // is removed whole before "GitHub" can leave "Actions" behind.
 export function englishWords(text, proper = []) {
@@ -245,6 +278,9 @@ export async function build(file, flags) {
   fs.writeFileSync(path.join(outDir, 'timeline.json'), JSON.stringify(tl, null, 2))
   console.log(`  總長 ${tl.total} 秒，${tl.scenes.length} 個場景，${animations} 個動畫`)
   for (const s of tl.scenes) console.log(`  ${String(s.start.toFixed(1)).padStart(6)}s  ${s.id.padEnd(12)} ${s.type.padEnd(10)} ${s.transition}`)
+  const length = lengthReport(board, tl)
+  if (length.rows.length) console.log(`  各章（實際／目標）：${length.rows.map((r) => r.text).join('、')}`)
+  length.warnings.forEach(warn)
 
   step('檢查')
   const lint = hf(['lint', '--json'], buildDir)

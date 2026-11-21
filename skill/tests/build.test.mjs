@@ -1,7 +1,7 @@
 // Storyboard-level checks that need no narration or rendering.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { balanceWarnings, englishWords, pictureWarnings, reasonWarnings, termWarnings, voiceProblem, shotScenes } from '../lib/build.mjs'
+import { balanceWarnings, englishWords, lengthReport, parseLength, pictureWarnings, reasonWarnings, termWarnings, voiceProblem, shotScenes } from '../lib/build.mjs'
 
 const board = (...types) => ({ scenes: types.map((type, i) => ({ id: `s${i}`, type })) })
 
@@ -96,4 +96,32 @@ test('專有名詞：介紹的那一句裡又唸一次名字也算重複', () =>
 
 test('分鏡裡有哪些截圖場景：沒寫 meta.material 時 build 用它來停止', () => {
   assert.deepEqual(shotScenes({ scenes: [{ id: 'a', type: 'shot' }, { id: 'b', type: 'title' }] }), ['a'])
+})
+
+test('長度：寫成 m:ss 或秒數', () => {
+  assert.equal(parseLength('6:00'), 360)
+  assert.equal(parseLength('1:30'), 90)
+  assert.equal(parseLength('90'), 90)
+  assert.equal(parseLength(75), 75)
+  assert.ok(Number.isNaN(parseLength('六分鐘')))
+})
+
+test('長度：總長超過目標一成、某章超過它分到的時間會警告；正式影片沒寫目標也會警告', () => {
+  const tl = { total: 420, scenes: [{ chapter: 'a', start: 0, end: 300 }, { chapter: 'b', start: 300, end: 420 }] }
+  const b = (meta, chapters) => ({ meta, chapters, scenes: [] })
+  const over = lengthReport(b({ length: '6:00' }, [{ id: 'a', length: '3:00' }, { id: 'b', length: 180 }]), tl)
+  assert.equal(over.warnings.length, 2)
+  assert.match(over.warnings[0], /總長 7:00，超過目標 6:00 的一成（a 多 120 秒）/)
+  assert.match(over.warnings[1], /章節「a」5:00，超過它分到的 3:00/)
+  assert.deepEqual(over.rows.map((r) => r.text), ['a 5:00／3:00', 'b 2:00／3:00'])
+  assert.deepEqual(lengthReport(b({ length: 400 }, [{ id: 'a', length: 300 }, { id: 'b', length: 120 }]), tl).warnings, [])
+  assert.match(lengthReport(b({ length: 400 }, [{ id: 'a', length: 300 }, { id: 'b' }]), tl).warnings[0], /章節「b」沒有寫 length/)
+  // A short chapter is held to the same 20%: 39 s against 30 s warns.
+  const short = { total: 39, scenes: [{ chapter: 'a', start: 0, end: 39 }] }
+  assert.match(lengthReport(b({ length: 60 }, [{ id: 'a', length: 30 }]), short).warnings[0], /章節「a」0:39，超過它分到的 0:30/)
+  // Rounding happens before the split, so 119.6 s is 2:00, not 1:60.
+  assert.deepEqual(lengthReport(b({}, [{ id: 'a' }]), { total: 119.6, scenes: [{ chapter: 'a', start: 0, end: 119.6 }] }).rows[0].text, 'a 2:00')
+  assert.match(lengthReport(b({ material: 'proj' }, []), tl).warnings[0], /沒有寫 meta.length/)
+  assert.deepEqual(lengthReport(b({ material: false }, []), tl).warnings, [])
+  assert.match(lengthReport(b({ length: '六分' }, []), tl).warnings[0], /要寫成「6:00」或秒數/)
 })
