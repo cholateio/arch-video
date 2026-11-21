@@ -10,7 +10,6 @@ export default {
     accent2: '#0b7a75', // only where something must be told apart from the accent (e.g. a different kind of step in a flow)
     wipe: '#1a1a1a', // bars of the chapter wipe
     progress: '#1a1a1a',
-    chipBg: '#faf8f4',
     rule: '#1a1a1a', // short rule under the title
   },
   glow: 'none', // glow layered over the frame
@@ -25,7 +24,6 @@ export default {
     title: [104, 84, 68],
     statement: [96, 84, 68, 56],
     kicker: 22, // small label above a title or statement
-    chip: 22, // chapter chip, top-left
     lead: 40, // subtitle under the title
     tag: 20, // title tags
     dimnote: 20, // label under the statement's dimension line

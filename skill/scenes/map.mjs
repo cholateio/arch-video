@@ -2,7 +2,7 @@
 // when the narration reaches a zone the camera zooms to it and everything else dims.
 // data: { svg, at?, draw?: false, title?: true, focus?: [Step] }
 //   draw: false shows the finished diagram at once, for a scene that continues from an earlier map scene.
-//   title: the SVG's own heading is hidden unless true (narration and the chapter chip cover it).
+//   title: the SVG's own heading is hidden unless true (the narration covers it).
 //   Step: { at, zone?, nodes?, trace? }
 //     zone:  a zone id (e.g. "zone-backend"); the camera zooms to it and its border turns accent.
 //     nodes: node ids to keep lit (e.g. ["n-api", "n-query"]); the camera frames them.

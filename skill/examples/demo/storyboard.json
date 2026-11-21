@@ -10,24 +10,16 @@
   },
   "chapters": [
     {
-      "id": "principle",
-      "label": "PRINCIPLE",
-      "short": "原則"
+      "id": "principle"
     },
     {
-      "id": "workflow",
-      "label": "WORKFLOW",
-      "short": "流程"
+      "id": "workflow"
     },
     {
-      "id": "widgets",
-      "label": "WIDGETS",
-      "short": "零件"
+      "id": "widgets"
     },
     {
-      "id": "result",
-      "label": "RESULT",
-      "short": "成果"
+      "id": "result"
     }
   ],
   "scenes": [

@@ -16,7 +16,7 @@
     "properNouns": ["arch-blueprint"],
     "terms": { "Supabase": { "intro": "雲端的資料庫服務", "plain": "資料庫" } }
   },
-  "chapters": [{ "id": "workflow", "short": "流程" }],
+  "chapters": [{ "id": "workflow" }],
   "scenes": [
     {
       "id": "rule",
@@ -40,10 +40,10 @@
 | `meta.properNouns` | 旁白裡可以保留英文的專有名詞。名稱裡有空格（`GitHub Actions`）就整個寫成一項 |
 | `meta.terms` | 每個會唸出來的專有名詞怎麼介紹、之後用什麼代稱，照編排的「名詞」表寫。見下面的「專有名詞」。寫在這裡的名字也算進 `properNouns` |
 | `meta.allow` | 機密掃描放行的字串，要和被擋下的內容完全相同、至少六個字。只有使用者同意公開的內容才放，例如專案對外的聯絡信箱 |
-| `chapters` | 章節清單，顯示成左上角的一排章節標示，目前這一章會亮起來。每一章寫 `short`：四個字以內的中文名稱（「為什麼」「架構」「排程」）。沒寫 `short` 時改用 `label`（英文大寫），只顯示目前這一章的名稱，其餘是圓點 |
+| `chapters` | 章節清單，每一章一個 `id`，只用來把場景分段，畫面上不顯示。場景的 `chapter` 要是這裡列的 `id` |
 | `scenes[].id` | 小寫英數與連字號，字母開頭，不可重複 |
 | `scenes[].type` | 場景元件，見下方 |
-| `scenes[].chapter` | 屬於哪一章；不寫就不顯示章節標示 |
+| `scenes[].chapter` | 屬於哪一章（可省略） |
 | `scenes[].transition` | 進場轉場：`cut`（預設）、`wipe`、`push`、`push-up`、`zoom` |
 | `scenes[].basis` | 這個場景根據素材的哪些條目，例如 `["A3.2", "F1", "D4", "bg:github-actions#B1"]`。沒有主張的場景寫 `[]` |
 | `scenes[].lines` | 旁白。`text` 是字幕；`say` 是實際唸的話，省略時等於 `text` |

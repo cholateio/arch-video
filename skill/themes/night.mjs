@@ -9,7 +9,6 @@ export default {
     accent2: '#5cc4a8', // only where something must be told apart from the accent (e.g. a different kind of step in a flow)
     wipe: '#1e2128',
     progress: 'rgba(244, 241, 234, 0.45)',
-    chipBg: 'transparent',
     rule: '#f2a348',
   },
   // Warm glow top-left, cool glow bottom-right. Layered above the content so the ground and cards are tinted together.
@@ -26,7 +25,6 @@ export default {
     title: [104, 84, 68],
     statement: [96, 84, 68, 56],
     kicker: 22, // small label above a title or statement
-    chip: 22, // chapter chip, top-left
     lead: 40, // subtitle under the title
     tag: 20, // title tags
     dimnote: 20, // label under the statement's dimension line

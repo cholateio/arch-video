@@ -10,28 +10,22 @@
   },
   "chapters": [
     {
-      "id": "problem",
-      "label": "PROBLEM"
+      "id": "problem"
     },
     {
-      "id": "principle",
-      "label": "PRINCIPLE"
+      "id": "principle"
     },
     {
-      "id": "structure",
-      "label": "STRUCTURE"
+      "id": "structure"
     },
     {
-      "id": "rules",
-      "label": "RULES"
+      "id": "rules"
     },
     {
-      "id": "verify",
-      "label": "VERIFY"
+      "id": "verify"
     },
     {
-      "id": "wrap",
-      "label": "WRAP-UP"
+      "id": "wrap"
     }
   ],
   "scenes": [

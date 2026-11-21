@@ -282,19 +282,15 @@ test('上下疊的零件比分到的高度還高時會警告', () => {
   assert.match(withSum([1, 6]), /第 1 個零件（slots）需要 117px 高/)
 })
 
-test('章節標示：每一章都有 short 時是一排名稱，否則是圓點加目前這一章的標題', () => {
-  const board = (chapters) => ({
+test('章節只用來分段：畫面上沒有章節列；場景寫了沒列在 chapters 裡的章節會報錯', () => {
+  const board = (chapters, used = chapters.map((c) => c.id)) => ({
     chapters,
-    scenes: chapters.map((c, i) => ({ id: `s${i}`, type: 'statement', chapter: c.id, transition: 'wipe', data: { segments: [{ text: '甲' }] }, lines: [{ text: '旁白內容' }] })),
+    scenes: used.map((id, i) => ({ id: `s${i}`, type: 'statement', chapter: id, transition: 'wipe', data: { segments: [{ text: '甲' }] }, lines: [{ text: '旁白內容' }] })),
   })
-  const named = run(board([{ id: 'a', label: 'WHY', short: '為什麼' }, { id: 'b', label: 'CAP', short: '上限' }]))
-  assert.match(named.html, /<div id="chip-1"[^>]*><span class="pill done">為什麼<\/span><i class="ln"><\/i><span class="pill cur">上限<\/span><\/div>/)
-  assert.deepEqual(named.warnings, [])
-  const dots = run(board([{ id: 'a', label: 'WHY' }, { id: 'b', label: 'CAP' }]))
-  assert.match(dots.html, /<div id="chip-1"[^>]*><i class="dot done"><\/i><span class="cur"><b>02<\/b>CAP<\/span><\/div>/)
-  const mixed = run(board([{ id: 'a', label: 'WHY', short: '為什麼' }, { id: 'b', label: 'CAP' }]))
-  assert.match(mixed.warnings.join('\n'), /只有一部分寫了 short/)
-  assert.match(mixed.html, /class="dot done"/)
+  const ok = run(board([{ id: 'a' }, { id: 'b' }]))
+  assert.doesNotMatch(ok.html, /class="chip/)
+  assert.deepEqual(ok.warnings, [])
+  assert.throws(() => run(board([{ id: 'a' }], ['a', 'b'])), /章節「b」沒有列在 chapters 裡/)
 })
 
 test('截圖：直的放進手機外框、橫的放進瀏覽器視窗；檔案複製進專案，框跟著觸發點出現', () => {

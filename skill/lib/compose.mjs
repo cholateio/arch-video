@@ -33,7 +33,7 @@ function installFonts(buildDir) {
 
 const rootVars = (theme) => `:root {
   --paper: ${theme.color.paper}; --surface: ${theme.color.surface}; --ink: ${theme.color.ink}; --accent: ${theme.color.accent}; --accent2: ${theme.color.accent2};
-  --wipe: ${theme.color.wipe}; --progress: ${theme.color.progress}; --chip-bg: ${theme.color.chipBg}; --rule: ${theme.color.rule};
+  --wipe: ${theme.color.wipe}; --progress: ${theme.color.progress}; --rule: ${theme.color.rule};
   --glow: ${theme.glow}; --scrim: ${theme.scrim};
   --sub-size: ${theme.sub.size}px; --sub-weight: ${theme.sub.weight}; --sub-bg: ${theme.sub.bg}; --sub-fg: ${theme.sub.fg}; --sub-shadow: ${theme.sub.shadow};
   --align-items: ${theme.layout.align === 'center' ? 'center' : 'flex-start'}; --text-align: ${theme.layout.align}; --inset: ${theme.layout.inset}px;
@@ -140,34 +140,9 @@ export function compose(board, tl, { theme, buildDir, baseDir, warn }) {
   })
   inits.push(['#wipe i', { xPercent: -101 }], ['#wipev i', { yPercent: -101 }], ['#iris', { scale: 0 }])
 
-  // Chapter chip: consecutive scenes of the same chapter share one.
-  const chapters = board.chapters ?? []
-  let run = null
-  const runs = []
-  tl.scenes.forEach((ts) => {
-    if (run && run.chapter === ts.chapter) run.end = ts.end
-    else { run = { chapter: ts.chapter, start: ts.start, end: ts.end, lead: LEAD[ts.transition] }; runs.push(run) }
-  })
-  const pad = (n) => String(n).padStart(2, '0')
-  // The strip shows every chapter, so the viewer always sees where the video is. With a short name on every chapter
-  // it is a row of named pills; otherwise a row of dots with the current chapter's number and label spelled out.
-  const named = chapters.length > 0 && chapters.every((c) => c.short)
-  if (!named && chapters.some((c) => c.short)) warn('chapters 裡只有一部分寫了 short：要每一章都寫，章節標示才會顯示成一排名稱')
-  chapters.forEach((c) => { if (!c.short && !c.label) throw new Error(`章節「${c.id}」要有 label 或 short`) })
-  const pillsWidth = chapters.reduce((n, c) => n + subtitleUnits(c.short ?? '') * theme.type.chip + 36, 0) + (chapters.length - 1) * 34
-  const pills = named && pillsWidth <= theme.frame.width - 220
-  if (named && !pills) warn(`章節的 short 加起來太長（約 ${Math.round(pillsWidth)}px），放不下一排，改用圓點顯示；請把每個 short 縮到四個字以內`)
-  const strip = (cur) => chapters.map((c, i) => {
-    const state = i < cur ? ' done' : i === cur ? ' cur' : ''
-    if (pills) return `${i ? '<i class="ln"></i>' : ''}<span class="pill${state}">${esc(c.short)}</span>`
-    return i === cur ? `<span class="cur"><b>${pad(i + 1)}</b>${esc(c.label ?? c.short)}</span>` : `<i class="dot${state}"></i>`
-  }).join('')
-  runs.filter((r) => r.chapter).forEach((r, k) => {
-    const idx = chapters.findIndex((c) => c.id === r.chapter)
-    if (idx < 0) throw new Error(`章節「${r.chapter}」沒有列在 chapters 裡`)
-    body.push(`<div id="chip-${k}" class="chip clip" data-start="${r.start}" data-duration="${round(r.end - r.start)}">${strip(idx)}</div>`)
-    anims.push(['from', `#chip-${k}`, { opacity: 0, x: -12, duration: 0.3, ease: 'power2.out' }, round(r.start + r.lead)])
-  })
+  // Chapters only group scenes; nothing about them is drawn on screen.
+  const chapterIds = new Set((board.chapters ?? []).map((c) => c.id))
+  tl.scenes.forEach((ts) => { if (ts.chapter && !chapterIds.has(ts.chapter)) throw new Error(`章節「${ts.chapter}」沒有列在 chapters 裡`) })
   body.push('<div id="glow"></div>')
   body.push('<div id="scrim"></div>')
   body.push('<div id="progress"></div>')
