@@ -201,7 +201,8 @@ export async function build(file, flags) {
   }
   const theme = (await import(pathToFileURL(themeFile).href)).default
   const outName = themeFlag ? `${name}-${themeFlag}` : name
-  const outRoot = path.resolve(flags.includes('--out') ? flags[flags.indexOf('--out') + 1] : 'out')
+  // Output sits next to the storyboard, so where the command is run from never decides where a video lands.
+  const outRoot = path.resolve(flags.includes('--out') ? flags[flags.indexOf('--out') + 1] : path.join(baseDir, 'out'))
   const outDir = path.join(outRoot, outName)
   const rel = (p) => path.relative(process.cwd(), p) || '.'
   const buildDir = path.join(outDir, 'project')

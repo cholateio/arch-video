@@ -9,7 +9,7 @@ cd skill
 npm install
 npx hyperframes browser ensure   # 第一次才需要：取得渲染用的無頭 Chrome
 npm test                         # 單元測試，不連網
-npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網）
+npm run demo                     # 產出 examples/demo/out/demo/demo.mp4（配音需要連網）
 ```
 
 ## Commands
@@ -26,7 +26,7 @@ npm run demo                     # 產出 out/demo/demo.mp4（配音需要連網
 | `node scripts/arch-video.mjs build <分鏡檔>` | 產出任一份分鏡的影片。分鏡寫了 `meta.material` 時先確認素材、核對每個場景的 `basis` |
 | `... --stills-only --voice` | 預覽時也配音，時間才準（調整版面與動畫時用）。不加 `--voice` 的預覽不連配音服務，沒配過音的句子用字數估算時間 |
 | `... --theme blueprint` | 臨時換主題，輸出到 `out/<name>-blueprint/` |
-| `... --out <資料夾>` | 指定輸出位置，預設是目前資料夾底下的 `out/` |
+| `... --out <資料夾>` | 指定輸出位置，預設是分鏡檔所在資料夾底下的 `out/`（和在哪裡執行指令無關） |
 
 素材 skill 的指令在 `skill-material/` 裡執行，不需要 `npm install`。
 
